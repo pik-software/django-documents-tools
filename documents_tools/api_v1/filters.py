@@ -51,12 +51,24 @@ class SnapshotFilterBase(FilterSet):
             ArrayField: {'filter_class': ArrayFilter}}
 
 
+class DocumentedModelFilterBase(FilterSet):
+    class Meta:
+        model = None
+        fields = {'uid': ['exact', 'in']}
+
+
+def get_documented_model_filter(model):
+    meta = type(f'Meta', (DocumentedModelFilterBase.Meta,), {'model': model})
+    attrs = {'Meta': meta}
+    name = f'LinkTo{model._meta.object_name}Filter'  # noqa: protected-access
+    return type(name, (DocumentedModelFilterBase,), attrs)
+
+
 def get_change_filter(model, orig_viewset):
     documented_model = orig_viewset.serializer_class.Meta.model
     documented_field = model._documented_model_field  # noqa: protected-access
     documented_filter = RelatedFilter(
-        orig_viewset.filter_class, name=documented_field,
-        queryset=documented_model.objects.all())
+        orig_viewset.filter_class, queryset=documented_model.objects.all())
     meta = type(f'Meta', (ChangeFilterBase.Meta,), {'model': model})
 
     attrs = {documented_field: documented_filter, 'Meta': meta}
@@ -65,12 +77,17 @@ def get_change_filter(model, orig_viewset):
 
 
 def get_snapshot_filter(model, change_viewset):
-    change_filter = change_viewset.filter_class
-    change_sub_filter = RelatedFilter(
-        change_filter, name='changes',
-        queryset=change_filter.Meta.model.objects.all())
+    change_model = change_viewset.serializer_class.Meta.model
+    snapshot_model = change_model._meta.get_field('snapshot').related_model  # noqa: protected-access
+    documented_model = getattr(
+        snapshot_model,
+        change_model._documented_model_field).field.related_model  # noqa: protected-access
+    documented_field = documented_model._meta.model_name  # noqa: protected-access
+    documented_filter = RelatedFilter(
+        get_documented_model_filter(documented_model),
+        queryset=documented_model.objects.all())
 
     meta = type(f'Meta', (SnapshotFilterBase.Meta, ), {'model': model})
-    attrs = {'changes': change_sub_filter, 'Meta': meta}
+    attrs = {f'{documented_field}': documented_filter, 'Meta': meta}
     name = f'{model._meta.object_name}Filter'  # noqa: protected-access
     return type(name, (SnapshotFilterBase, ), attrs)

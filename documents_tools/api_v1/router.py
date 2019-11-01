@@ -1,7 +1,6 @@
 from rest_framework.routers import DefaultRouter
 
-from lib.documents.api_v1.viewsets import (
-    get_change_viewset, get_snapshot_viewset)
+from .viewsets import get_change_viewset, get_snapshot_viewset
 
 
 def _get_viewset_name(viewset):
@@ -16,7 +15,8 @@ class DocumentedRouter(DefaultRouter):
             name = _get_viewset_name(change_viewset)
             super().register(f'{name}-list', change_viewset, name)
 
-            snapshot_viewset = get_snapshot_viewset(change_viewset)
+            snapshot_viewset = get_snapshot_viewset(
+                change_viewset, orig_viewset)
             if snapshot_viewset:
                 name = _get_viewset_name(snapshot_viewset)  # noqa: protected-access
                 super().register(f'{name}-list', snapshot_viewset, name)

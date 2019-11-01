@@ -2,7 +2,6 @@ import copy
 import importlib
 from typing import List
 
-from django.conf import settings
 from django.db import models
 from django.apps import apps
 from django.utils import timezone
@@ -10,12 +9,19 @@ from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import ugettext, ugettext_lazy as _
 from model_utils import FieldTracker
 
-from lib.documents.exceptions import BusinessEntityCreationIsNotAllowedError
-from lib.documents.fields import FIELDS_PROCESSORS
-from lib.documents.manager import ChangeDescriptor, SnapshotDescriptor
+from .fields import FIELDS_PROCESSORS
+from .manager import ChangeDescriptor, SnapshotDescriptor
+from .exceptions import BusinessEntityCreationIsNotAllowedError
+from .settings import tools_settings as t_settings
 
 
 class BaseChange(models.Model):
+    _help_text = _(
+        'Изменение - некоторый текстовый или материальный объект, являющийся, '
+        'с точки зрения "бизнеса", интерфейсом ввода данных в сервис. '
+        'Как правило, документы моделируются через создание объектов типа '
+        'логическая история бизнес-сущности')
+
     _all_documented_fields: List[str] = None
     _documented_model_field: str = None
     _snapshot_model_field: str = None
@@ -67,7 +73,7 @@ class BaseChange(models.Model):
 
         if not self.document_is_draft:
             new_documented = getattr(self, self._documented_model_field)
-            creation = settings.CREATE_BUSINESS_ENTITY_AFTER_CHANGE_CREATED
+            creation = t_settings.CREATE_BUSINESS_ENTITY_AFTER_CHANGE_CREATED
             if new_documented is None and creation:
                 new_documented = self.apply_new()
                 setattr(self, self._documented_model_field, new_documented)
@@ -83,11 +89,18 @@ class BaseChange(models.Model):
 
 
 class BaseSnapshot(models.Model):
+    _help_text = _(
+        'Снапшот - состояние бизнес-объекта на определенный момент времени. '
+        'Можно сказать, что снапшот является совокупностью всех логических '
+        'изменений бизнес-объекта на минимальную единицу времени. '
+        'На один момент времени может существовать только один снапшот. '
+        'Снапшоты вычисляются на основе логической истории')
 
     EXCLUDED_STATE_FIELDS = (
         'uid', 'deleted', 'created', 'updated', 'version', 'history_date',
         'document_fields')
 
+    changes = None
     document_fields = ArrayField(
         models.CharField(_('Заполненные атрибуты'), max_length=255),
         default=list)
@@ -115,6 +128,14 @@ class BaseSnapshot(models.Model):
                     and field_name in self.document_fields):
                 state[field_name] = getattr(self, field_name)
         return state
+
+    @property
+    def document_fields_from_changes(self):
+        result = set()
+        doc_fields = self.changes.values_list('document_fields', flat=True)
+        for fields in doc_fields.all():
+            result.update(fields)
+        return result
 
     def is_empty(self):
         return all(v is None for v in self.state.values())
@@ -219,7 +240,7 @@ class Changes:
         attrs = {
             '__module__': self.get_module(model, inherited),
             '_documented_excluded_fields': self.excluded_fields,
-        }
+            'bases_viewsets': self.change_opts['bases_viewsets']}
         opts = model._meta   # noqa protected-access
 
         primary_field_name = opts.model_name
@@ -234,8 +255,12 @@ class Changes:
         attrs['_all_documented_fields'] = documented_fields
         attrs['permitted_fields'] = {
             '{app_label}.change_{model_name}': (
-                'change_name', 'document_date', 'document_link',
-                'document_is_draft', 'documented_fields',
+                'document_name', 'document_date', 'document_link',
+                'document_is_draft', 'document_fields',
+                primary_field_name, *documented_fields),
+            '{app_label}.add_{model_name}': (
+                'document_name', 'document_date', 'document_link',
+                'document_is_draft', 'document_fields',
                 primary_field_name, *documented_fields)}
         attrs['snapshot'] = models.ForeignKey(
             self.snapshot_model, on_delete=models.DO_NOTHING,
@@ -260,13 +285,15 @@ class Changes:
         """
         attrs = {
             '__module__': self.get_module(model, inherited),
-            'unit_size_in_days': self.snapshot_opts['unit_size_in_days']}
+            'unit_size_in_days': self.snapshot_opts['unit_size_in_days'],
+            'bases_viewsets': self.snapshot_opts['bases_viewsets']}
 
         src_fields = self.get_fields(model)
         fields = self.copy_fields(src_fields)
         documented_fields = tuple(field.name for field in src_fields)
         attrs['permitted_fields'] = {
-            '{app_label}.change_{model_name}': (*documented_fields,)}
+            '{app_label}.change_{model_name}': (*documented_fields,),
+            '{app_label}.add_{model_name}': (*documented_fields,)}
         attrs.update(fields)
         opts = model._meta   # noqa protected-access
         attrs[opts.model_name] = models.ForeignKey(
