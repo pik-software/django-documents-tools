@@ -8,7 +8,7 @@ from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 
-from lib.documents.exceptions import (
+from .exceptions import (
     ObservableInstanceRequiredError,
     SnapshotDuplicateExistsError, ChangesAreNotCreatedYetError)
 
@@ -48,6 +48,22 @@ def _get_first_and_last_date_borders(query_set, field_name):
     else:
         last_date = first_date
     return first_date, last_date
+
+
+def _update_snapshot_via_previous(prev_snapshot, snapshot):
+    d_fields = snapshot.document_fields_from_changes
+    prev_d_fields = prev_snapshot.document_fields_from_changes
+    prev_d_fields = prev_d_fields | set(prev_snapshot.document_fields)
+    prev_d_fields -= d_fields
+    state = snapshot.state
+    prev_snap_st = prev_snapshot.state
+    for d_field in prev_d_fields:
+        state[d_field] = prev_snap_st.get(d_field)
+    changed = setattrs(snapshot, **state)
+    if changed:
+        updated_fields = set(snapshot.document_fields) | set(changed)
+        snapshot.document_fields = list(updated_fields)
+        snapshot.save()
 
 
 class ChangeDescriptor:
@@ -252,6 +268,10 @@ class SnapshotsSlicer:
                     self._snapshots.append(snapshot)
             else:
                 snapshot = snapshots_qs.filter(deleted__isnull=True).first()
+                if snapshot and self._snapshots:
+                    prev_snap = self._snapshots[-1]
+                    if prev_snap.updated > snapshot.updated:
+                        _update_snapshot_via_previous(prev_snap, snapshot)
                 if snapshot:
                     self._snapshots.append(snapshot)
 

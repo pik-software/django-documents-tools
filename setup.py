@@ -8,7 +8,6 @@ requirements = [
 setup(
     name='documents-tools',
     author='pik-software',
-    author_email='gregory.eremeev@gmail.com',
     version='0.1.0',
     license='BSD-3-Clause',
     url='https://github.com/pik-software/documents-tools',
