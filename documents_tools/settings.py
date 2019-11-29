@@ -1,8 +1,8 @@
 from collections import ChainMap
 
 from django.conf import settings
-from rest_framework import serializers, viewsets
 from django.utils.module_loading import import_string
+from rest_framework import serializers, viewsets
 
 
 DEFAULT_SETTINGS = {
@@ -12,7 +12,7 @@ DEFAULT_SETTINGS = {
 }
 
 
-class ToolsSettings(ChainMap):
+class ToolsSettings(ChainMap): # noqa: too-many-ancestors
 
     DEFAULT = object()
 
@@ -26,5 +26,5 @@ class ToolsSettings(ChainMap):
         return value
 
 
-user_settings = getattr(settings, 'DOCUMENTS_TOOLS', {})
-tools_settings = ToolsSettings(user_settings, DEFAULT_SETTINGS)
+user_settings = getattr(settings, 'DOCUMENTS_TOOLS', {}) # noqa: invalid-name
+tools_settings = ToolsSettings(user_settings, DEFAULT_SETTINGS) # noqa: invalid-name

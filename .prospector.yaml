@@ -1,0 +1,21 @@
+test-warnings: true
+strictness: veryhigh
+
+ignore-paths:
+  - docs
+  - migrations
+  - .venv
+  - README.md
+  - LICENCE.txt
+  - MANIFEST.in
+  - requirements*
+  - .circleci
+  - dist
+
+pylint:
+  disable:
+    - too-many-arguments
+    - unused-argument
+    - too-few-public-methods
+    - no-else-return
+    - too-many-instance-attributes
