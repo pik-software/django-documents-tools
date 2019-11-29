@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 
 from django.db.models import BooleanField, NullBooleanField, AutoField
-from documents_tools import fields
+from django_documents_tools import fields
 
 
 def test_boolean():
