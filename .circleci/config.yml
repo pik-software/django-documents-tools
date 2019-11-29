@@ -40,7 +40,6 @@ jobs:
           command: |
             . .venv/bin/activate
             set +x
-            check-manifest
             python setup.py check -m -s
             pytest --doctest-modules --durations=0 -vvv tests
             prospector --profile-path . --profile .prospector.yaml .
