@@ -49,7 +49,7 @@ def _process_operation(fake_apps, app, operation):
 
 @receiver(post_migrate)
 def process_migrate(
-        apps: StateApps,
+        apps: StateApps, # noqa: redefined-outer-name
         plan: List[Tuple[migrations.Migration, bool]], **kwargs):
     for migration, is_reverse in plan:
         if is_reverse:
