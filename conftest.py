@@ -37,7 +37,7 @@ def pytest_configure(config):
             'django.contrib.messages',
             'django.contrib.staticfiles',
 
-            'documents_tools',
+            'django_documents_tools',
         ),
         PASSWORD_HASHERS=(
             'django.contrib.auth.hashers.MD5PasswordHasher',

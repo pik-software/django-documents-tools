@@ -1,6 +1,6 @@
 from rest_framework.fields import CharField
 
-from documents_tools.api_v1.serializers import clone_serializer_field
+from django_documents_tools.api_v1.serializers import clone_serializer_field
 
 
 def test_field_clone():

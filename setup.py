@@ -15,7 +15,7 @@ REQUIREMENTS_DEV = _get_requirements('requirements.dev.txt')
 
 
 setup(
-    name='documents-tools',
+    name='django-documents-tools',
     author='pik-software',
     author_email='no-reply@pik-software.ru',
     version='0.1.0',
