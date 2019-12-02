@@ -1,18 +1,51 @@
 import copy
+import logging
 import importlib
 from typing import List
 
-from django.db import models
 from django.apps import apps
 from django.utils import timezone
+from django.db import models
 from django.contrib.postgres.fields import ArrayField
+from django.db.models.signals import class_prepared
 from django.utils.translation import ugettext, ugettext_lazy as _
 from model_utils import FieldTracker
 
 from .fields import FIELDS_PROCESSORS
 from .manager import ChangeDescriptor, SnapshotDescriptor
-from .exceptions import BusinessEntityCreationIsNotAllowedError
+from .exceptions import (
+    BusinessEntityCreationIsNotAllowedError, ChangesAreNotCreatedYetError)
 from .settings import tools_settings as t_settings
+
+
+LOGGER = logging.getLogger(__name__)
+
+
+class BaseDocumented(models.Model):
+
+    changes = None
+
+    class Meta:
+        abstract = True
+
+    def save(self, force_insert=False, force_update=False, using=None,  # noqa: arguments-differ
+             update_fields=None, apply_documents=True):
+        if self.deleted:
+            deletion_time = timezone.now()
+            self.snapshots.filter(
+                deleted__isnull=True).update(
+                deleted=deletion_time, updated=deletion_time)
+            self.changes.filter(
+                deleted__isnull=True).update(
+                deleted=deletion_time, updated=deletion_time)
+
+        if apply_documents:
+            try:
+                self.changes.apply_to_object(timezone.now().date())
+            except ChangesAreNotCreatedYetError:
+                LOGGER.info('Changes are not created yet')
+
+        super().save(force_insert, force_update, using, update_fields)
 
 
 class BaseChange(models.Model):
@@ -205,7 +238,7 @@ class Changes:
     def contribute_to_class(self, cls, name):
         self.module = cls.__module__
         self.cls = cls
-        models.signals.class_prepared.connect(self.finalize, weak=False)
+        class_prepared.connect(self.finalize, weak=False)
 
     def finalize(self, sender, **kwargs):
         inherited = False
