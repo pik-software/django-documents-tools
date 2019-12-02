@@ -149,6 +149,7 @@ class Changes:
 
     DEFAULT_CHANGE_OPTS = {
         'bases': (BaseChange,),
+        'bases_viewsets': (),
         'manager_name': 'changes',
         'model_name': None,
         'table_name': None,
@@ -160,6 +161,7 @@ class Changes:
 
     DEFAULT_SNAPSHOT_OPTS = {
         'bases': (BaseSnapshot,),
+        'bases_viewsets': (),
         'unit_size_in_days': None,
         'manager_name': 'snapshots',
         'model_name': None,
