@@ -1,10 +1,8 @@
-from django.apps import AppConfig as BaseAppConfig
-from django.utils.translation import ugettext_lazy as _
+from django.apps import AppConfig
 
 
-class AppConfig(BaseAppConfig):
-    name = 'documents-tools'
-    verbose_name = _('documents-tools')
+class DjangoDocumentsToolsConfig(AppConfig):
+    name = 'django_documents_tools'
 
     def ready(self):
         from .import signals

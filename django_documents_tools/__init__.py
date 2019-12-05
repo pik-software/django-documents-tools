@@ -1,1 +1,1 @@
-default_app_config = 'django_documents_tools.apps.AppConfig'  # noqa: pylint=invalid-name
+default_app_config = 'django_documents_tools.apps.DjangoDocumentsToolsConfig'  # noqa: pylint=invalid-name

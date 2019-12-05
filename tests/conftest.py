@@ -1,3 +1,4 @@
+import django
 from django.conf import settings
 
 
@@ -6,8 +7,11 @@ def pytest_configure(config):
         DEBUG_PROPAGATE_EXCEPTIONS=True,
         DATABASES={
             'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': ':memory:'
+                'ENGINE': 'django.contrib.gis.db.backends.postgis',
+                'NAME': 'repo',
+                'USER': 'postgres',
+                'HOST': '127.0.0.1',
+                'PORT': '5432'
             }
         },
         SITE_ID=1,
@@ -38,8 +42,10 @@ def pytest_configure(config):
             'django.contrib.staticfiles',
 
             'django_documents_tools',
+            'tests'
         ),
         PASSWORD_HASHERS=(
             'django.contrib.auth.hashers.MD5PasswordHasher',
-        ),
+        )
     )
+    django.setup()

@@ -13,7 +13,7 @@ jobs:
       - image: mdillon/postgis:9.6
         environment:
           POSTGRES_DB: repo
-          POSTGRES_USER: root
+          POSTGRES_USER: postgres
 
       - image: redis:3.2
 

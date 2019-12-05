@@ -21,7 +21,23 @@ from .settings import tools_settings as t_settings
 LOGGER = logging.getLogger(__name__)
 
 
-class BaseDocumented(models.Model):
+class Dated(models.Model):
+
+    created = models.DateTimeField(
+        editable=False, auto_now_add=True, db_index=True,
+        verbose_name=_('created'))
+    updated = models.DateTimeField(
+        editable=False, auto_now=True, db_index=True,
+        verbose_name=_('updated'))
+    deleted = models.DateTimeField(
+        editable=False, null=True, blank=True, db_index=True,
+        verbose_name=_('deleted'))
+
+    class Meta:
+        abstract = True
+
+
+class BaseDocumented(Dated):
 
     changes = None
 
@@ -48,7 +64,8 @@ class BaseDocumented(models.Model):
         super().save(force_insert, force_update, using, update_fields)
 
 
-class BaseChange(models.Model):
+class BaseChange(Dated):
+
     _help_text = _(
         'Изменение - некоторый текстовый или материальный объект, являющийся, '
         'с точки зрения "бизнеса", интерфейсом ввода данных в сервис. '
@@ -68,11 +85,9 @@ class BaseChange(models.Model):
     document_is_draft = models.BooleanField(_('Черновик'), default=True)
     document_fields = ArrayField(
         models.CharField(_('Атрибуты'), max_length=255), default=list)
-    deleted = models.DateTimeField(
-        editable=False, null=True, blank=True, verbose_name=_('deleted'))
 
     def __str__(self):
-        return f'{self.uid} - {self.document_name}'
+        return f'{self.pk} - {self.document_name}'
 
     @property
     def snapshot_or_none(self):
@@ -97,7 +112,7 @@ class BaseChange(models.Model):
             self._documented_model_field).remote_field.model
         kwargs = self.get_changes()
         new_documented = documented_model(**kwargs)
-        new_documented.save()
+        new_documented.save(apply_documents=False)
         return new_documented
 
     def save(self, force_insert=False, force_update=False, using=None,
@@ -121,7 +136,8 @@ class BaseChange(models.Model):
             self.refresh_from_db()
 
 
-class BaseSnapshot(models.Model):
+class BaseSnapshot(Dated):
+
     _help_text = _(
         'Снапшот - состояние бизнес-объекта на определенный момент времени. '
         'Можно сказать, что снапшот является совокупностью всех логических '
@@ -139,14 +155,12 @@ class BaseSnapshot(models.Model):
         default=list)
     history_date = models.DateTimeField(
         _('Дата состояния объекта'), db_index=True)
-    deleted = models.DateTimeField(
-        editable=False, null=True, blank=True, verbose_name=_('deleted'))
 
     class Meta:
         abstract = True
 
     def __str__(self):
-        return f'{self.uid} - {self.history_date}'
+        return f'{self.pk} - {self.history_date}'
 
     @property
     def state(self):
