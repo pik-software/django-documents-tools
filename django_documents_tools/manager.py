@@ -101,7 +101,7 @@ class SnapshotCalculator:
         for change in changes:
             change.snapshot = snapshot
             self._change_model.objects.filter(
-                uid=change.uid).update(snapshot=snapshot)
+                pk=change.pk).update(snapshot=snapshot)
 
     def _calculate_snapshot(self, changes, snapshot_state):
         snapshot_state = snapshot_state.copy()
