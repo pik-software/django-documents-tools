@@ -9,9 +9,9 @@ from django_documents_tools.exceptions import (
 from .models import Book, Address, Author
 
 
-DocumentedObjectChange = Book.changes.model # noqa: invalid-name
-DocumentedObjectSnapshot = (                # noqa: invalid-name
-    DocumentedObjectChange.snapshot.field.remote_field.model)
+BookChange = Book.changes.model # noqa: invalid-name
+BookSnapshot = (                # noqa: invalid-name
+    BookChange.snapshot.field.remote_field.model)
 
 
 def _create_author(first_name='first_name', last_name='last_name'):
@@ -36,7 +36,7 @@ def _create_book_change(
             'title', 'author', 'isbn', 'is_published', 'summary']
 
     author = author or _create_author()
-    change = DocumentedObjectChange(
+    change = BookChange(
         document_fields=document_fields,
         document_date=document_date,
         document_is_draft=document_is_draft, book=book,
@@ -50,7 +50,7 @@ def test_create_draft_changes():
     change = _create_book_change()
 
     assert change.snapshot_or_none is None
-    assert DocumentedObjectChange.objects.count() == 1
+    assert BookChange.objects.count() == 1
     assert Book.objects.count() == 0
 
 
@@ -67,7 +67,7 @@ def test_turn_off_change_draft_mode_without_doc_object():
     change.save()
 
     assert change.snapshot_or_none
-    assert DocumentedObjectChange.objects.count() == 1
+    assert BookChange.objects.count() == 1
     assert Book.objects.count() == 1
 
     snapshot = change.snapshot_or_none
@@ -83,7 +83,7 @@ def test_turn_off_change_draft_mode_without_doc_object():
 def test_turn_off_change_draft_mode_with_doc_object():
     change_1 = _create_book_change(document_is_draft=False)
     assert change_1.snapshot_or_none
-    assert DocumentedObjectChange.objects.count() == 1
+    assert BookChange.objects.count() == 1
     assert Book.objects.count() == 1
 
     change_2 = _create_book_change(
@@ -92,7 +92,7 @@ def test_turn_off_change_draft_mode_with_doc_object():
     change_2.save()
 
     assert change_2.snapshot_or_none
-    assert DocumentedObjectChange.objects.count() == 2
+    assert BookChange.objects.count() == 2
     assert Book.objects.count() == 1
 
     book = change_1.book
@@ -138,8 +138,8 @@ def test_couple_of_changes_to_one_snapshot():
     assert change_1.snapshot_or_none
     assert change_1.snapshot_or_none == change_2.snapshot_or_none
     assert Book.objects.count() == 1
-    assert DocumentedObjectChange.objects.count() == 2
-    assert DocumentedObjectSnapshot.objects.filter(
+    assert BookChange.objects.count() == 2
+    assert BookSnapshot.objects.filter(
         deleted__isnull=True).count() == 1
 
     book.refresh_from_db()
@@ -154,7 +154,7 @@ def test_delete_change():
     change = _create_book_change(document_is_draft=False)
 
     assert change.snapshot_or_none
-    assert DocumentedObjectChange.objects.count() == 1
+    assert BookChange.objects.count() == 1
     assert Book.objects.count() == 1
 
     change.deleted = timezone.now()
@@ -162,7 +162,7 @@ def test_delete_change():
 
     assert change.snapshot_or_none
     assert change.snapshot.deleted
-    assert DocumentedObjectChange.objects.filter(
+    assert BookChange.objects.filter(
         deleted__isnull=False).count() == 1
     assert Book.objects.count() == 1
 
@@ -174,7 +174,7 @@ def test_delete_doc_object():
     change = _create_book_change(document_is_draft=False)
 
     assert change.snapshot_or_none
-    assert DocumentedObjectChange.objects.count() == 1
+    assert BookChange.objects.count() == 1
     assert Book.objects.count() == 1
 
     book = change.book
@@ -182,9 +182,9 @@ def test_delete_doc_object():
     book.save()
 
     change.refresh_from_db()
-    assert DocumentedObjectChange.objects.filter(
+    assert BookChange.objects.filter(
         deleted__isnull=False).count() == 1
-    assert DocumentedObjectSnapshot.objects.filter(
+    assert BookSnapshot.objects.filter(
         deleted__isnull=False).count() == 1
     assert Book.objects.filter(deleted__isnull=False).count() == 1
 
@@ -203,9 +203,9 @@ def test_recover_deleted_snapshot_after_move_change():
         author=expected_author, title=expected_title)
 
     assert old_change.snapshot_or_none
-    assert DocumentedObjectChange.objects.count() == 2
+    assert BookChange.objects.count() == 2
     assert Book.objects.count() == 1
-    assert DocumentedObjectSnapshot.objects.count() == 2
+    assert BookSnapshot.objects.count() == 2
 
     old_snapshot = old_change.snapshot
     deleted_snapshot = moved_change.snapshot
@@ -215,7 +215,7 @@ def test_recover_deleted_snapshot_after_move_change():
     moved_change.save()
 
     deleted_snapshot.refresh_from_db()
-    assert DocumentedObjectSnapshot.objects.count() == 2
+    assert BookSnapshot.objects.count() == 2
     assert moved_change.snapshot == old_snapshot
     assert moved_change.snapshot.deleted is None
     assert moved_change.snapshot.updated >= old_snapshot.updated
@@ -236,7 +236,7 @@ def test_clear_deleted_snapshot():
     change = _create_book_change(document_is_draft=False)
 
     assert change.snapshot_or_none
-    assert DocumentedObjectChange.objects.count() == 1
+    assert BookChange.objects.count() == 1
     assert Book.objects.count() == 1
 
     snapshot = change.snapshot
@@ -256,7 +256,7 @@ def test_move_change_to_already_created_snapshot():
         document_is_draft=False, document_date=old_time)
 
     assert old_change.snapshot_or_none
-    assert DocumentedObjectChange.objects.count() == 1
+    assert BookChange.objects.count() == 1
     assert Book.objects.count() == 1
 
     old_snapshot = old_change.snapshot
@@ -270,7 +270,7 @@ def test_move_change_to_already_created_snapshot():
     old_snapshot.refresh_from_db()
     change.refresh_from_db()
     assert old_snapshot.deleted
-    assert DocumentedObjectSnapshot.objects.filter(
+    assert BookSnapshot.objects.filter(
         deleted__isnull=True).count() == 1
     assert change.snapshot == old_change.snapshot
 
@@ -302,15 +302,15 @@ def test_snapshots_not_touched_fields_stay_the_same_in_last_snapshot():
     book.refresh_from_db()
     assert book.title == expected_title
     assert change_3.snapshot.title == expected_title
-    assert DocumentedObjectSnapshot.objects.count() == 3
-    assert DocumentedObjectChange.objects.count() == 3
+    assert BookSnapshot.objects.count() == 3
+    assert BookChange.objects.count() == 3
 
 
 @pytest.mark.django_db
 def test_create_change_without_business_entity_creation():
     old_tariff_change = _create_book_change(document_is_draft=True)
 
-    assert DocumentedObjectChange.objects.filter(
+    assert BookChange.objects.filter(
         document_is_draft=True).count() == 1
     assert Book.objects.count() == 0
 
@@ -335,12 +335,12 @@ def test_use_initial_snapshot_from_right_documented_object():
         document_is_draft=False, book=book,
         document_fields=document_fields)
 
-    assert DocumentedObjectChange.objects.count() == 2
+    assert BookChange.objects.count() == 2
     assert Book.objects.count() == 2
 
-    DocumentedObjectSnapshot.objects.filter(book=book).all().delete()
+    BookSnapshot.objects.filter(book=book).all().delete()
     change_2.book.save()
 
     assert change_2.book.title == expected_title
-    assert DocumentedObjectChange.objects.count() == 2
+    assert BookChange.objects.count() == 2
     assert Book.objects.count() == 2
