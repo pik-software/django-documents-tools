@@ -13,14 +13,14 @@ pip install django-documents-tools
 ```python
     INSTALLED_APPS = [
         ...
-        django_document_tools,
+        django_documents_tools,
     ]
 ```
 
 3 Configure the settings as you want
 
 ```python
-    DOCUMENTS_SETTINGS = {
+    DOCUMENTS_TOOLS = {
         'BASE_SERIALIZER': 'path_to_your_model_serializer',
         'BASE_VIEW_SET': 'path_to_your_model_viewset',
         'CREATE_BUSINESS_ENTITY_AFTER_CHANGE_CREATED': False}
