@@ -31,7 +31,7 @@ class SnapshotSerializerBase(serializers.ModelSerializer):
 class DocumentedModelLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
-        fields = ('_uid', '_type', '_version')
+        fields = ('_uid', '_type', '_version', 'created', 'updated')
 
 
 def clone_serializer_field(field, **kwargs):
