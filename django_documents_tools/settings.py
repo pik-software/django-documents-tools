@@ -2,8 +2,7 @@ from collections import ChainMap
 
 from django.conf import settings as django_settings
 from django.test.signals import setting_changed
-from django.utils.module_loading import import_string
-from rest_framework import serializers, viewsets
+from rest_framework import viewsets
 
 
 SETTINGS_NAME = 'DOCUMENTS_TOOLS'
@@ -23,7 +22,13 @@ class ToolsSettings(ChainMap): # noqa: too-many-ancestors
 
     DEFAULT_VALUE = object()
     DEFAULT_SETTINGS = {
-        'BASE_SERIALIZER': serializers.ModelSerializer,
+        'BASE_SNAPSHOT_SERIALIZER': (
+            'django_documents_tools.api.serializers.SnapshotSerializerBase'),
+        'BASE_CHANGE_SERIALIZER': (
+            'django_documents_tools.api.serializers.ChangeSerializerBase'),
+        'BASE_DOCUMENTED_MODEL_LINK_SERIALIZER': (
+            'django_documents_tools.api.serializers.'
+            'DocumentedModelLinkSerializer'),
         'BASE_VIEW_SET': viewsets.ModelViewSet,
         'CREATE_BUSINESS_ENTITY_AFTER_CHANGE_CREATED': False}
 
@@ -36,8 +41,6 @@ class ToolsSettings(ChainMap): # noqa: too-many-ancestors
         if value is self.DEFAULT_VALUE:
             raise AttributeError(
                 f"Tools settings object has no attribute '{name}'")
-        elif isinstance(value, str):
-            value = import_string(value)
         return value
 
     def reload_user_settings(self):
