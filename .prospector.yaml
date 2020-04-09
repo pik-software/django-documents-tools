@@ -17,5 +17,6 @@ pylint:
     - too-many-arguments
     - unused-argument
     - too-few-public-methods
+    - redefined-outer-name
     - no-else-return
     - too-many-instance-attributes
