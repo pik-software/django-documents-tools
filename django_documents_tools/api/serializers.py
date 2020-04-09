@@ -47,6 +47,7 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
 
     opts = model._meta  # noqa: protected-access
     documented_field = model._documented_model_field  # noqa: protected-access
+    documented_model = serializer_class.Meta.model
     fields = (ChangeSerializerBase.Meta.fields + model._all_documented_fields  # noqa: protected-access
               + (documented_field, ))
 
@@ -64,7 +65,8 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
         else:
             implicit_fields_extra_kwargs[name] = NON_REQUIRED_KWARGS
 
-    attrs[documented_field] = serializer_class(**NON_REQUIRED_KWARGS)
+    attrs[documented_field] = get_documented_model_serializer(
+        documented_model)(**NON_REQUIRED_KWARGS)
     attrs['Meta'] = type(
         'Meta', (ChangeSerializerBase.Meta,),
         {'model': model, 'fields': fields, 'read_only_fields': [],
@@ -86,6 +88,8 @@ def get_documented_model_serializer(model):
 def get_snapshot_serializer(model, change_serializer):
     change_model = change_serializer.Meta.model
     documented_model_field = change_model._documented_model_field  # noqa: protected-access
+    documented_model = getattr(
+        model, change_model._documented_model_field).field.related_model  # noqa: protected-access
     fields = (SnapshotSerializerBase.Meta.fields
               + change_model._all_documented_fields  # noqa: protected-access
               + (documented_model_field, ))
@@ -93,6 +97,8 @@ def get_snapshot_serializer(model, change_serializer):
     attrs = {
         'Meta': type('Meta', (SnapshotSerializerBase.Meta,),
                      {'model': model, 'fields': fields})}
+    attrs[documented_model_field] = get_documented_model_serializer(
+        documented_model)(**NON_REQUIRED_KWARGS)
 
     name = f'{model._meta.object_name}Serializer'  # noqa: protected-access
     return type(name, (SnapshotSerializerBase, change_serializer), attrs)

@@ -1,7 +1,6 @@
 from .filters import get_change_filter, get_snapshot_filter
 from .serializers import (
-    get_change_serializer_class, get_snapshot_serializer,
-    get_documented_model_serializer, NON_REQUIRED_KWARGS)
+    get_change_serializer_class, get_snapshot_serializer)
 from ..settings import tools_settings
 
 
@@ -64,15 +63,8 @@ def get_snapshot_viewset(change_viewset, documented_viewset):
     change_serializer = change_viewset.serializer_class
     change_model = change_serializer.Meta.model
     snapshot_model = change_model._meta.get_field('snapshot').related_model  # noqa: protected-access
-    documented_model = getattr(
-        snapshot_model,
-        change_model._documented_model_field).field.related_model  # noqa: protected-access
     snapshot_serializer = get_snapshot_serializer(
         snapshot_model, change_serializer)
-    documented_model_name = documented_model._meta.model_name  # noqa: protected-access
-    snapshot_serializer._declared_fields[documented_model_name] = (  # noqa: protected-access
-        get_documented_model_serializer(
-            documented_model)(**NON_REQUIRED_KWARGS))
     snapshot_filter = get_snapshot_filter(snapshot_model, change_viewset)
 
     attrs = {'serializer_class': snapshot_serializer,
