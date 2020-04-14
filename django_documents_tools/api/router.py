@@ -21,7 +21,7 @@ class DocumentedRouter(DefaultRouter):
                 name = _get_viewset_name(snapshot_viewset)  # noqa: protected-access
                 super().register(f'{name}-list', snapshot_viewset, name)
 
-    def register(self, prefix, viewset, basename=None):
+    def register(self, prefix, viewset, basename=None, base_name=None):
         if getattr(viewset, 'allow_changes', True):
             self.register_viewsets(viewset)
-        super().register(prefix, viewset, basename)
+        super().register(prefix, viewset, basename, base_name)
