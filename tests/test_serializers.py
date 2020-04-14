@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 from django.test import override_settings
 from rest_framework.fields import CharField
@@ -14,16 +16,6 @@ from .models import Book
 
 
 UNKNOWN_SERIALIZER_PATH = 'tests.serializers.UnknownBookSerializer'
-
-
-@pytest.fixture
-def book_change_model():
-    return Book.changes.model
-
-
-@pytest.fixture
-def book_snapshot_model(book_change_model):
-    return book_change_model._meta.get_field('snapshot').related_model  # noqa: protected-access
 
 
 def test_field_clone():
@@ -76,6 +68,20 @@ class TestGetChangeSerializerClass:
                 get_change_serializer_class(book_change_model, BookSerializer)
             assert exc_info.value.args[0] == self.expected_error_msg
 
+    def test_get_for_model(self, book_change_model):
+        with mock.patch.object(
+                book_change_model, '_base_serializer',
+                self.custom_serializer_path):
+            book_change_serializer = get_change_serializer_class(
+                book_change_model, BookSerializer)
+
+        assert issubclass(book_change_serializer, CustomChangeSerializer)
+        assert book_change_serializer.Meta.fields == (
+            '_uid', '_type', '_version', 'created', 'updated', 'document_name',
+            'document_date', 'document_link', 'document_is_draft',
+            'document_fields', 'custom_field', 'title', 'author', 'summary',
+            'isbn', 'is_published', 'book')
+
 
 class TestGetSnapshotSerializerClass:
     setting_name = 'BASE_SNAPSHOT_SERIALIZER'
@@ -125,6 +131,22 @@ class TestGetSnapshotSerializerClass:
                 get_snapshot_serializer(
                     book_snapshot_model, book_change_serializer)
             assert exc_info.value.args[0] == self.expected_error_msg
+
+    def test_get_for_model(self, book_change_model, book_snapshot_model):
+        book_change_serializer = get_change_serializer_class(
+            book_change_model, BookSerializer)
+
+        with mock.patch.object(
+                book_snapshot_model, '_base_serializer',
+                self.custom_serializer_path):
+            book_snapshot_serializer = get_snapshot_serializer(
+                book_snapshot_model, book_change_serializer)
+
+        assert issubclass(book_snapshot_serializer, CustomSnapshotSerializer)
+        assert book_snapshot_serializer.Meta.fields == (
+            '_uid', '_type', '_version', 'created', 'updated',
+            'document_fields', 'history_date', 'custom_field', 'title',
+            'author', 'summary', 'isbn', 'is_published', 'book')
 
 
 class TestGetDocumentedModelLinkSerializerClass:

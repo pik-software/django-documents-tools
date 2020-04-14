@@ -2,10 +2,18 @@ from collections import ChainMap
 
 from django.conf import settings as django_settings
 from django.test.signals import setting_changed
-from rest_framework import viewsets
 
 
 SETTINGS_NAME = 'DOCUMENTS_TOOLS'
+BASE_SNAPSHOT_SERIALIZER = (
+    'django_documents_tools.api.serializers.BaseSnapshotSerializer')
+BASE_SNAPSHOT_VIEWSET = (
+    'django_documents_tools.api.viewsets.BaseSnapshotViewSet')
+BASE_CHANGE_SERIALIZER = (
+    'django_documents_tools.api.serializers.BaseChangeSerializer')
+BASE_CHANGE_VIEWSET = 'django_documents_tools.api.viewsets.BaseChangeViewSet'
+BASE_DOCUMENTED_MODEL_LINK_SERIALIZER = (
+    'django_documents_tools.api.serializers.BaseDocumentedModelLinkSerializer')
 
 
 def _reload_settings(*args, **kwargs):
@@ -22,14 +30,12 @@ class ToolsSettings(ChainMap): # noqa: too-many-ancestors
 
     DEFAULT_VALUE = object()
     DEFAULT_SETTINGS = {
-        'BASE_SNAPSHOT_SERIALIZER': (
-            'django_documents_tools.api.serializers.BaseSnapshotSerializer'),
-        'BASE_CHANGE_SERIALIZER': (
-            'django_documents_tools.api.serializers.BaseChangeSerializer'),
+        'BASE_SNAPSHOT_SERIALIZER': BASE_SNAPSHOT_SERIALIZER,
+        'BASE_SNAPSHOT_VIEWSET': BASE_SNAPSHOT_VIEWSET,
+        'BASE_CHANGE_SERIALIZER': BASE_CHANGE_SERIALIZER,
+        'BASE_CHANGE_VIEWSET': BASE_CHANGE_VIEWSET,
         'BASE_DOCUMENTED_MODEL_LINK_SERIALIZER': (
-            'django_documents_tools.api.serializers.'
-            'BaseDocumentedModelLinkSerializer'),
-        'BASE_VIEW_SET': viewsets.ModelViewSet,
+            BASE_DOCUMENTED_MODEL_LINK_SERIALIZER),
         'CREATE_BUSINESS_ENTITY_AFTER_CHANGE_CREATED': False}
 
     def __init__(self):

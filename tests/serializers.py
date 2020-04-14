@@ -10,7 +10,7 @@ class AuthorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Author
         fields = (
-            'id', 'first_name', 'last_name', 'date_of_birth', 'date_of_death')
+            'uid', 'first_name', 'last_name', 'date_of_birth', 'date_of_death')
 
 
 class BookSerializer(serializers.ModelSerializer):
@@ -18,7 +18,7 @@ class BookSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Book
-        fields = ('id', 'title', 'author', 'summary', 'isbn', 'is_published')
+        fields = ('uid', 'title', 'author', 'summary', 'isbn', 'is_published')
 
 
 class CustomChangeSerializer(BaseChangeSerializer):
@@ -58,4 +58,4 @@ class CustomDocumentedModelLinkSerializer(BaseDocumentedModelLinkSerializer):
 class UnknownBookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
-        fields = ('id', 'title', 'author', 'summary', 'isbn', 'is_published')
+        fields = ('uid', 'title', 'author', 'summary', 'isbn', 'is_published')

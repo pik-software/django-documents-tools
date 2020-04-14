@@ -45,18 +45,22 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
         2. Copying explicitly defined fields with args={required=False}
         3. Copying implicitly defined fields with extra_kwargs={required:False}
     """
-    base = import_string(tools_settings.BASE_CHANGE_SERIALIZER)
 
-    if not issubclass(base, BaseChangeSerializer):
+    if model._base_serializer:  # noqa: protected-access
+        base_change_serializer = import_string(model._base_serializer)  # noqa: protected-access
+    else:
+        base_change_serializer = import_string(
+            tools_settings.BASE_CHANGE_SERIALIZER)
+
+    if not issubclass(base_change_serializer, BaseChangeSerializer):
         raise Exception(
-            f'{base.__name__} must be subclass of '
+            f'{base_change_serializer.__name__} must be subclass of '
             f'{BaseChangeSerializer.__name__}')
 
-    assert issubclass(base, BaseChangeSerializer)
     opts = model._meta  # noqa: protected-access
     documented_field = model._documented_model_field  # noqa: protected-access
     documented_model = serializer_class.Meta.model
-    fields = (base.Meta.fields + model._all_documented_fields  # noqa: protected-access
+    fields = (base_change_serializer.Meta.fields + model._all_documented_fields  # noqa: protected-access
               + (documented_field, ))
 
     attrs = {}
@@ -76,16 +80,17 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
     attrs[documented_field] = get_documented_model_serializer(
         documented_model)(**NON_REQUIRED_KWARGS)
     attrs['Meta'] = type(
-        'Meta', (base.Meta,),
+        'Meta', (base_change_serializer.Meta,),
         {'model': model, 'fields': fields, 'read_only_fields': [],
          'extra_kwargs': implicit_fields_extra_kwargs})
 
     name = f'{opts.object_name}Serializer'
-    return type(name, (base,), attrs)
+    return type(name, (base_change_serializer,), attrs)
 
 
 def get_documented_model_serializer(model):
-    base = import_string(tools_settings.BASE_DOCUMENTED_MODEL_LINK_SERIALIZER)
+    base = import_string(
+        tools_settings.BASE_DOCUMENTED_MODEL_LINK_SERIALIZER)
 
     if not issubclass(base, BaseDocumentedModelLinkSerializer):
         raise Exception(
@@ -101,26 +106,30 @@ def get_documented_model_serializer(model):
 
 
 def get_snapshot_serializer(model, change_serializer):
-    base = import_string(tools_settings.BASE_SNAPSHOT_SERIALIZER)
+    if model._base_serializer:  # noqa: protected-access
+        base_snapshot_serializer = import_string(model._base_serializer)  # noqa: protected-access
+    else:
+        base_snapshot_serializer = import_string(
+            tools_settings.BASE_SNAPSHOT_SERIALIZER)
 
-    if not issubclass(base, BaseSnapshotSerializer):
+    if not issubclass(base_snapshot_serializer, BaseSnapshotSerializer):
         raise Exception(
-            f'{base.__name__} must be subclass of '
+            f'{base_snapshot_serializer.__name__} must be subclass of '
             f'{BaseSnapshotSerializer.__name__}')
 
     change_model = change_serializer.Meta.model
     documented_model_field = change_model._documented_model_field  # noqa: protected-access
     documented_model = getattr(
         model, change_model._documented_model_field).field.related_model  # noqa: protected-access
-    fields = (base.Meta.fields + change_model._all_documented_fields  # noqa: protected-access
+    fields = (base_snapshot_serializer.Meta.fields + change_model._all_documented_fields  # noqa: protected-access
               + (documented_model_field, ))
 
     attrs = {
-        'Meta': type('Meta', (base.Meta,),
+        'Meta': type('Meta', (base_snapshot_serializer.Meta,),
                      {'model': model, 'fields': fields})}
     attrs[documented_model_field] = get_documented_model_serializer(
         documented_model)(**NON_REQUIRED_KWARGS)
 
     name = f'{model._meta.object_name}Serializer'  # noqa: protected-access
-    bases = (base, change_serializer)
+    bases = (base_snapshot_serializer, change_serializer)
     return type(name, bases, attrs)

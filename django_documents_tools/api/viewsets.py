@@ -1,20 +1,20 @@
+from rest_framework.viewsets import ModelViewSet
+from django.utils.module_loading import import_string
+
 from .filters import get_change_filter, get_snapshot_filter
 from .serializers import (
     get_change_serializer_class, get_snapshot_serializer)
 from ..settings import tools_settings
 
 
-class ChangeViewSetBase(tools_settings.BASE_VIEW_SET):
+class BaseDocumentedViewSet(ModelViewSet):
+    allow_history = False
+
     lookup_field = 'uid'
     lookup_url_kwarg = '_uid'
-    ordering = ('document_date', )
-    ordering_fields = ('document_date', 'updated', 'uid', )
-    search_fields = ('document_name', )
     serializer_class = None
     filter_class = None
     select_related_fields = ()
-
-    allow_history = True
 
     def get_queryset(self):
         queryset = self.serializer_class.Meta.model.objects.all()
@@ -23,11 +23,18 @@ class ChangeViewSetBase(tools_settings.BASE_VIEW_SET):
         return queryset
 
 
-class SnapshotViewSetBase(ChangeViewSetBase):
-    allow_history = False
-    search_fields = ('changes__document_name',)
-    ordering_fields = ('history_date', 'updated', 'uid',)
+class BaseChangeViewSet(BaseDocumentedViewSet):
+    allow_history = True
+
+    ordering = ('document_date', )
+    ordering_fields = ('document_date', 'updated', 'uid', )
+    search_fields = ('document_name', )
+
+
+class BaseSnapshotViewSet(BaseDocumentedViewSet):
     ordering = ('history_date',)
+    ordering_fields = ('history_date', 'updated', 'uid',)
+    search_fields = ('changes__document_name',)
 
 
 def get_change_viewset(documented_viewset):
@@ -39,6 +46,16 @@ def get_change_viewset(documented_viewset):
     if document_manager is None:
         return None
     model = document_manager.model
+
+    if model._base_viewset:  # noqa: protected-access
+        base_change_viewset = import_string(model._base_viewset)  # noqa: protected-access
+    else:
+        base_change_viewset = import_string(tools_settings.BASE_CHANGE_VIEWSET)
+
+    if not issubclass(base_change_viewset, BaseChangeViewSet):
+        raise Exception(
+            f'{base_change_viewset.__name__} must be subclass of '
+            f'{BaseChangeViewSet.__name__}')
 
     document_serializer = get_change_serializer_class(
         model, documented_viewset.serializer_class)
@@ -52,17 +69,27 @@ def get_change_viewset(documented_viewset):
     attrs = {'serializer_class': document_serializer,
              'filter_class': document_filter,
              'select_related_fields': select_related_fields,
-             '__doc__': ChangeViewSetBase.__doc__}
-
-    bases = model.bases_viewsets + (ChangeViewSetBase,)
+             '__doc__': base_change_viewset.__doc__}
     name = f'{model._meta.object_name}ViewSet'  # noqa: protected-access
-    return type(name, bases, attrs)
+    return type(name, (base_change_viewset,), attrs)
 
 
 def get_snapshot_viewset(change_viewset, documented_viewset):
     change_serializer = change_viewset.serializer_class
     change_model = change_serializer.Meta.model
     snapshot_model = change_model._meta.get_field('snapshot').related_model  # noqa: protected-access
+
+    if snapshot_model._base_viewset:  # noqa: protected-access
+        base_snapshot_viewset = import_string(snapshot_model._base_viewset)  # noqa: protected-access
+    else:
+        base_snapshot_viewset = import_string(
+            tools_settings.BASE_SNAPSHOT_VIEWSET)
+
+    if not issubclass(base_snapshot_viewset, BaseSnapshotViewSet):
+        raise Exception(
+            f'{base_snapshot_viewset.__name__} must be subclass of '
+            f'{BaseSnapshotViewSet.__name__}')
+
     snapshot_serializer = get_snapshot_serializer(
         snapshot_model, change_serializer)
     snapshot_filter = get_snapshot_filter(snapshot_model, change_viewset)
@@ -70,8 +97,7 @@ def get_snapshot_viewset(change_viewset, documented_viewset):
     attrs = {'serializer_class': snapshot_serializer,
              'filter_class': snapshot_filter,
              'select_related_fields': change_viewset.select_related_fields,
-             '__doc__': SnapshotViewSetBase.__doc__}
+             '__doc__': base_snapshot_viewset.__doc__}
 
-    bases = snapshot_model.bases_viewsets + (SnapshotViewSetBase,)
     name = f'{snapshot_model._meta.object_name}ViewSet'  # noqa: protected-access
-    return type(name, bases, attrs)
+    return type(name, (base_snapshot_viewset, ), attrs)
