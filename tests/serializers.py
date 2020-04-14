@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django_documents_tools.api.serializers import (
-    ChangeSerializerBase, SnapshotSerializerBase,
-    DocumentedModelLinkSerializer)
+    BaseChangeSerializer, BaseSnapshotSerializer,
+    BaseDocumentedModelLinkSerializer)
 
 from .test_models import Book, Author
 
@@ -21,7 +21,7 @@ class BookSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'author', 'summary', 'isbn', 'is_published')
 
 
-class CustomChangeSerializer(ChangeSerializerBase):
+class CustomChangeSerializer(BaseChangeSerializer):
     custom_field = serializers.SerializerMethodField()
 
     @staticmethod
@@ -29,10 +29,10 @@ class CustomChangeSerializer(ChangeSerializerBase):
         return 'Extra'
 
     class Meta:
-        fields = ChangeSerializerBase.Meta.fields + ('custom_field',)
+        fields = BaseChangeSerializer.Meta.fields + ('custom_field',)
 
 
-class CustomSnapshotSerializer(SnapshotSerializerBase):
+class CustomSnapshotSerializer(BaseSnapshotSerializer):
     custom_field = serializers.SerializerMethodField()
 
     @staticmethod
@@ -40,10 +40,10 @@ class CustomSnapshotSerializer(SnapshotSerializerBase):
         return 'Extra'
 
     class Meta:
-        fields = SnapshotSerializerBase.Meta.fields + ('custom_field',)
+        fields = BaseSnapshotSerializer.Meta.fields + ('custom_field',)
 
 
-class CustomDocumentedModelLinkSerializer(DocumentedModelLinkSerializer):
+class CustomDocumentedModelLinkSerializer(BaseDocumentedModelLinkSerializer):
     custom_field = serializers.SerializerMethodField()
 
     @staticmethod
@@ -51,7 +51,8 @@ class CustomDocumentedModelLinkSerializer(DocumentedModelLinkSerializer):
         return 'Extra'
 
     class Meta:
-        fields = DocumentedModelLinkSerializer.Meta.fields + ('custom_field',)
+        fields = BaseDocumentedModelLinkSerializer.Meta.fields + (
+            'custom_field',)
 
 
 class UnknownBookSerializer(serializers.ModelSerializer):

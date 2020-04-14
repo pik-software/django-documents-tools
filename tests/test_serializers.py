@@ -5,8 +5,8 @@ from rest_framework.fields import CharField
 from django_documents_tools.api.serializers import (
     clone_serializer_field, get_change_serializer_class,
     get_snapshot_serializer, get_documented_model_serializer,
-    ChangeSerializerBase, SnapshotSerializerBase,
-    DocumentedModelLinkSerializer)
+    BaseChangeSerializer, BaseSnapshotSerializer,
+    BaseDocumentedModelLinkSerializer)
 from .serializers import (
     BookSerializer, CustomChangeSerializer, CustomSnapshotSerializer,
     CustomDocumentedModelLinkSerializer)
@@ -36,14 +36,14 @@ class TestGetChangeSerializerClass:
     setting_name = 'BASE_CHANGE_SERIALIZER'
     custom_serializer_path = 'tests.serializers.CustomChangeSerializer'
     expected_error_msg = (
-        'UnknownBookSerializer must be subclass of ChangeSerializerBase')
+        'UnknownBookSerializer must be subclass of BaseChangeSerializer')
 
     @staticmethod
     def test_get_default(book_change_model):
         book_change_serializer = get_change_serializer_class(
             book_change_model, BookSerializer)
 
-        assert issubclass(book_change_serializer, ChangeSerializerBase)
+        assert issubclass(book_change_serializer, BaseChangeSerializer)
         assert book_change_serializer.Meta.fields == (
             '_uid', '_type', '_version', 'created', 'updated', 'document_name',
             'document_date', 'document_link', 'document_is_draft',
@@ -81,7 +81,7 @@ class TestGetSnapshotSerializerClass:
     setting_name = 'BASE_SNAPSHOT_SERIALIZER'
     custom_serializer_path = 'tests.serializers.CustomSnapshotSerializer'
     expected_error_msg = (
-        'UnknownBookSerializer must be subclass of SnapshotSerializerBase')
+        'UnknownBookSerializer must be subclass of BaseSnapshotSerializer')
 
     @staticmethod
     def test_get_default(book_change_model, book_snapshot_model):
@@ -90,7 +90,7 @@ class TestGetSnapshotSerializerClass:
         book_snapshot_serializer = get_snapshot_serializer(
             book_snapshot_model, book_change_serializer)
 
-        assert issubclass(book_snapshot_serializer, SnapshotSerializerBase)
+        assert issubclass(book_snapshot_serializer, BaseSnapshotSerializer)
         assert book_snapshot_serializer.Meta.fields == (
             '_uid', '_type', '_version', 'created', 'updated',
             'document_fields', 'history_date', 'title', 'author', 'summary',
@@ -133,12 +133,13 @@ class TestGetDocumentedModelLinkSerializerClass:
         'tests.serializers.CustomDocumentedModelLinkSerializer')
     expected_error_msg = (
         'UnknownBookSerializer must be subclass of '
-        'DocumentedModelLinkSerializer')
+        'BaseDocumentedModelLinkSerializer')
 
     @staticmethod
     def test_get_default():
         book_link_serializer = get_documented_model_serializer(Book)
-        assert issubclass(book_link_serializer, DocumentedModelLinkSerializer)
+        assert issubclass(
+            book_link_serializer, BaseDocumentedModelLinkSerializer)
         assert book_link_serializer.Meta.fields == (
             '_uid', '_type', '_version', 'created', 'updated')
 

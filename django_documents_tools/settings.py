@@ -23,12 +23,12 @@ class ToolsSettings(ChainMap): # noqa: too-many-ancestors
     DEFAULT_VALUE = object()
     DEFAULT_SETTINGS = {
         'BASE_SNAPSHOT_SERIALIZER': (
-            'django_documents_tools.api.serializers.SnapshotSerializerBase'),
+            'django_documents_tools.api.serializers.BaseSnapshotSerializer'),
         'BASE_CHANGE_SERIALIZER': (
-            'django_documents_tools.api.serializers.ChangeSerializerBase'),
+            'django_documents_tools.api.serializers.BaseChangeSerializer'),
         'BASE_DOCUMENTED_MODEL_LINK_SERIALIZER': (
             'django_documents_tools.api.serializers.'
-            'DocumentedModelLinkSerializer'),
+            'BaseDocumentedModelLinkSerializer'),
         'BASE_VIEW_SET': viewsets.ModelViewSet,
         'CREATE_BUSINESS_ENTITY_AFTER_CHANGE_CREATED': False}
 

@@ -8,7 +8,7 @@ from ..settings import tools_settings
 NON_REQUIRED_KWARGS = {'required': False, 'allow_null': True}
 
 
-class ChangeSerializerBase(serializers.ModelSerializer):
+class BaseChangeSerializer(serializers.ModelSerializer):
     document_link = serializers.URLField(default='', allow_blank=True)
     document_fields = serializers.ListField(default=[])
 
@@ -20,7 +20,7 @@ class ChangeSerializerBase(serializers.ModelSerializer):
             'document_fields')
 
 
-class SnapshotSerializerBase(serializers.ModelSerializer):
+class BaseSnapshotSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (
@@ -28,7 +28,7 @@ class SnapshotSerializerBase(serializers.ModelSerializer):
             'document_fields', 'history_date')
 
 
-class DocumentedModelLinkSerializer(serializers.ModelSerializer):
+class BaseDocumentedModelLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
         fields = ('_uid', '_type', '_version', 'created', 'updated')
@@ -47,12 +47,12 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
     """
     base = import_string(tools_settings.BASE_CHANGE_SERIALIZER)
 
-    if not issubclass(base, ChangeSerializerBase):
+    if not issubclass(base, BaseChangeSerializer):
         raise Exception(
             f'{base.__name__} must be subclass of '
-            f'{ChangeSerializerBase.__name__}')
+            f'{BaseChangeSerializer.__name__}')
 
-    assert issubclass(base, ChangeSerializerBase)
+    assert issubclass(base, BaseChangeSerializer)
     opts = model._meta  # noqa: protected-access
     documented_field = model._documented_model_field  # noqa: protected-access
     documented_model = serializer_class.Meta.model
@@ -87,10 +87,10 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
 def get_documented_model_serializer(model):
     base = import_string(tools_settings.BASE_DOCUMENTED_MODEL_LINK_SERIALIZER)
 
-    if not issubclass(base, DocumentedModelLinkSerializer):
+    if not issubclass(base, BaseDocumentedModelLinkSerializer):
         raise Exception(
             f'{base.__name__} must be subclass of '
-            f'{DocumentedModelLinkSerializer.__name__}')
+            f'{BaseDocumentedModelLinkSerializer.__name__}')
 
     attrs = {
         'Meta': type(
@@ -103,10 +103,10 @@ def get_documented_model_serializer(model):
 def get_snapshot_serializer(model, change_serializer):
     base = import_string(tools_settings.BASE_SNAPSHOT_SERIALIZER)
 
-    if not issubclass(base, SnapshotSerializerBase):
+    if not issubclass(base, BaseSnapshotSerializer):
         raise Exception(
             f'{base.__name__} must be subclass of '
-            f'{SnapshotSerializerBase.__name__}')
+            f'{BaseSnapshotSerializer.__name__}')
 
     change_model = change_serializer.Meta.model
     documented_model_field = change_model._documented_model_field  # noqa: protected-access

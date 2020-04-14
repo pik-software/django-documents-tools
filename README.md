@@ -89,18 +89,18 @@ class Book(Documented):
 ```python
 
 from rest_framework import serializers
-from django_documents_tools.api.serializers import ChangeSerializerBase
+from django_documents_tools.api.serializers import BaseChangeSerializer
 
 
-class CustomChangeSerializerBase(ChangeSerializerBase):
+class CustomChangeSerializerBase(BaseChangeSerializer):
 
     my_custom_field = serializers.SerializerMethodField()
 
     def get_my_custom_field(self, change):
         return 'Extra data'
 
-    class Meta(ChangeSerializerBase.Meta):
-        fields = ChangeSerializerBase.Meta.fields + ('my_custom_field',)
+    class Meta(BaseChangeSerializer.Meta):
+        fields = BaseChangeSerializer.Meta.fields + ('my_custom_field',)
 ```
 
 2. Update documents tools settings.
