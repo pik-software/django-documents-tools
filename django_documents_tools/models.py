@@ -2,6 +2,7 @@ import copy
 import logging
 import importlib
 from typing import List
+from uuid import uuid4
 
 from django.apps import apps
 from django.utils import timezone
@@ -16,7 +17,7 @@ from .manager import ChangeDescriptor, SnapshotDescriptor
 from .exceptions import (
     BusinessEntityCreationIsNotAllowedError, ChangesAreNotCreatedYetError)
 from .settings import tools_settings as t_settings
-
+from .utils import get_change_attachment_path
 
 LOGGER = logging.getLogger(__name__)
 
@@ -134,6 +135,20 @@ class BaseChange(Dated):
             new_documented.changes.apply_to_object(date=applicable_date)
             new_documented.save()
             self.refresh_from_db()
+
+
+class BaseChangeAttachment(Dated):
+    _help_text = _(
+        'Вложение к документу - модель для хранения пользовательских файлов, '
+        'прикрепленных к документу')
+
+    change = None
+    uid = models.UUIDField(default=uuid4, primary_key=True)
+    attachment = models.FileField(
+        verbose_name=_('вложение'), upload_to=get_change_attachment_path)
+
+    class Meta:
+        abstract = True
 
 
 class BaseSnapshot(Dated):
@@ -283,6 +298,10 @@ class Changes:
         sender._meta.snapshot_manager_attribute = self.snapshot_opts[  # noqa: protected-access
             'manager_name']
 
+        setattr(
+            module, self.change_attachment_model.__name__,
+            self.change_attachment_model)
+
     def create_change_model(self, model, inherited):
         """
         Create a change model to associate with the model provided.
@@ -331,6 +350,40 @@ class Changes:
             if self.change_opts['model_name'] is not None
             else '%sChange' % opts.object_name)
         return type(str(name), self.change_opts['bases'], attrs)
+
+    def create_change_attachment_model(self, model, inherited):
+        """
+        Create change attachment model
+        """
+
+        opts = model._meta  # noqa protected-access
+        attrs = {
+            '__module__': self.get_module(model, inherited),
+            '_base_viewset': self.change_attachment_opts['base_viewset'],
+            '_base_serializer': self.change_attachment_opts['base_serializer'],
+        }
+        attrs['permitted_fields'] = {
+            '{app_label}.change_{model_name}': ('change', 'attachment')
+        }
+        attrs['change'] = models.ForeignKey(
+            self.change_model, on_delete=models.CASCADE,
+            related_name='attachments', blank=True, null=True,
+            verbose_name=self.change_model._meta.verbose_name.title())  # noqa protected-access
+        base_meta_opts = {
+            'ordering': ('-created',),
+            'db_table': self.change_attachment_opts.get('table_name')
+        }
+
+        if self.change_attachment_opts['model_name']:
+            name = self.change_attachment_opts['model_name']
+        else:
+            name = f'{opts.object_name}ChangeAttachment'
+
+        meta_opts = self.get_meta_options(
+            model, base_meta_opts, self.change_attachment_opts)
+        attrs['Meta'] = type('Meta', (), meta_opts)
+
+        return type(name, self.change_attachment_opts['bases'], attrs)
 
     def create_snapshot_model(self, model, inherited):
         """
