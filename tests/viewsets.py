@@ -1,7 +1,7 @@
 from rest_framework.viewsets import ModelViewSet
 
 from django_documents_tools.api.viewsets import (
-    BaseChangeViewSet, BaseSnapshotViewSet)
+    BaseChangeViewSet, BaseSnapshotViewSet, BaseChangeAttachmentViewSet)
 
 from .models import Book
 from .serializers import BookSerializer
@@ -25,6 +25,11 @@ class CustomBookChangeViewSet(BaseChangeViewSet):
 
 
 class CustomBookSnapshotViewSet(BaseSnapshotViewSet):
+    # Custom viewset attribute
+    prefetch_related_fields = ['test']
+
+
+class CustomBookChangeAttachmentViewSet(BaseChangeAttachmentViewSet):
     # Custom viewset attribute
     prefetch_related_fields = ['test']
 

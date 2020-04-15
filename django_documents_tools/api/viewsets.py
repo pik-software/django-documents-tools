@@ -1,9 +1,11 @@
 from rest_framework.viewsets import ModelViewSet
 from django.utils.module_loading import import_string
 
-from .filters import get_change_filter, get_snapshot_filter
+from .filters import get_change_filter, get_snapshot_filter, \
+    get_change_attachment_filter
 from .serializers import (
-    get_change_serializer_class, get_snapshot_serializer)
+    get_change_serializer_class, get_snapshot_serializer,
+    get_change_attachment_serializer)
 from ..settings import tools_settings
 
 
@@ -35,6 +37,11 @@ class BaseSnapshotViewSet(BaseDocumentedViewSet):
     ordering = ('history_date',)
     ordering_fields = ('history_date', 'updated', 'uid',)
     search_fields = ('changes__document_name',)
+
+
+class BaseChangeAttachmentViewSet(BaseDocumentedViewSet):
+    allow_history = True
+    select_related_fields = ('change',)
 
 
 def get_change_viewset(documented_viewset):
@@ -101,3 +108,37 @@ def get_snapshot_viewset(change_viewset, documented_viewset):
 
     name = f'{snapshot_model._meta.object_name}ViewSet'  # noqa: protected-access
     return type(name, (base_snapshot_viewset, ), attrs)
+
+
+def get_change_attachment_viewset(change_viewset):
+    change_model = change_viewset.serializer_class.Meta.model
+    change_filter = change_viewset.filter_class
+    change_attachment_model = (
+        change_model._meta.get_field('attachments').related_model)  # noqa: protected-access
+
+    change_attachment_serializer = get_change_attachment_serializer(
+        change_attachment_model, change_model)
+
+    if change_attachment_model._base_viewset:  # noqa: protected-access
+        base_change_attachment_viewset = import_string(
+            change_attachment_model._base_viewset)  # noqa: protected-access
+    else:
+        base_change_attachment_viewset = import_string(
+            tools_settings.BASE_CHANGE_ATTACHMENT_VIEWSET)
+
+    if not issubclass(
+            base_change_attachment_viewset, BaseChangeAttachmentViewSet):
+        raise Exception(
+            f'{base_change_attachment_viewset.__name__} must be subclass of '
+            f'{BaseChangeAttachmentViewSet.__name__}')
+
+    change_attachment_filter = get_change_attachment_filter(
+        change_attachment_model, change_filter)
+    attrs = {
+        'serializer_class': change_attachment_serializer,
+        'filter_class': change_attachment_filter,
+        '__doc__': base_change_attachment_viewset.__doc__
+    }
+
+    name = f'{change_attachment_model._meta.object_name}ViewSet'  # noqa: protected-access
+    return type(name, (base_change_attachment_viewset,), attrs)

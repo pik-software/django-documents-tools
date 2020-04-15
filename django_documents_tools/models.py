@@ -2,7 +2,6 @@ import copy
 import logging
 import importlib
 from typing import List
-from uuid import uuid4
 
 from django.apps import apps
 from django.utils import timezone
@@ -143,7 +142,6 @@ class BaseChangeAttachment(Dated):
         'прикрепленных к документу')
 
     change = None
-    uid = models.UUIDField(default=uuid4, primary_key=True)
     attachment = models.FileField(
         verbose_name=_('вложение'), upload_to=get_change_attachment_path)
 
