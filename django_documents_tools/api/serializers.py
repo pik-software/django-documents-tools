@@ -34,6 +34,20 @@ class BaseDocumentedModelLinkSerializer(serializers.ModelSerializer):
         fields = ('_uid', '_type', '_version', 'created', 'updated')
 
 
+class BaseChangeLinkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = None
+        fields = ('_uid', '_type', '_version', 'created', 'updated')
+
+
+class BaseChangeAttachmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = None
+        fields = (
+            '_uid', '_type', '_version', 'created', 'updated', 'change',
+            'attachment')
+
+
 def clone_serializer_field(field, **kwargs):
     return type(field)(*field._args, **{**field._kwargs, **kwargs})  # noqa: protected-access
 
@@ -133,3 +147,44 @@ def get_snapshot_serializer(model, change_serializer):
     name = f'{model._meta.object_name}Serializer'  # noqa: protected-access
     bases = (base_snapshot_serializer, change_serializer)
     return type(name, bases, attrs)
+
+
+def get_change_link_serializer(change_model):
+    base = import_string(tools_settings.BASE_CHANGE_LINK_SERIALIZER)
+
+    if not issubclass(base, BaseChangeLinkSerializer):
+        raise Exception(
+            f'{base.__name__} must be subclass of '
+            f'{BaseChangeLinkSerializer.__name__}')
+
+    meta_opts = {'model': change_model, 'fields': base.Meta.fields}
+    meta = type('Meta', (base.Meta,), meta_opts)
+    name = f'{change_model._meta.object_name}LinkSerializer'  # noqa: protected-access
+    return type(name, (base, ), {'Meta': meta})
+
+
+def get_change_attachment_serializer(model, change_model):
+    if model._base_serializer:  # noqa: protected-access
+        base_change_attachment_serializer = import_string(
+            model._base_serializer)  # noqa: protected-access
+    else:
+        base_change_attachment_serializer = import_string(
+            tools_settings.BASE_CHANGE_ATTACHMENT_SERIALIZER)
+
+    if not issubclass(
+            base_change_attachment_serializer, BaseChangeAttachmentSerializer):
+        raise Exception(
+            f'{base_change_attachment_serializer.__name__} must be subclass of'
+            f' {BaseChangeAttachmentSerializer.__name__}')
+
+    fields = base_change_attachment_serializer.Meta.fields
+    meta_opts = {'model': model, 'fields': fields}
+    meta = type('Meta', (base_change_attachment_serializer.Meta,), meta_opts)
+    attrs = {
+        'Meta': meta,
+        'change': get_change_link_serializer(change_model)(
+            **NON_REQUIRED_KWARGS),
+    }
+
+    name = f'{model._meta.object_name}Serializer'  # noqa: protected-access
+    return type(name, (base_change_attachment_serializer, ), attrs)

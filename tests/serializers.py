@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django_documents_tools.api.serializers import (
     BaseChangeSerializer, BaseSnapshotSerializer,
-    BaseDocumentedModelLinkSerializer)
+    BaseDocumentedModelLinkSerializer, BaseChangeAttachmentSerializer)
 
 from .test_models import Book, Author
 
@@ -53,6 +53,17 @@ class CustomDocumentedModelLinkSerializer(BaseDocumentedModelLinkSerializer):
     class Meta:
         fields = BaseDocumentedModelLinkSerializer.Meta.fields + (
             'custom_field',)
+
+
+class CustomChangeAttachmentSerializer(BaseChangeAttachmentSerializer):
+    custom_field = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_custom_field(obj):
+        return 'Extra'
+
+    class Meta:
+        fields = BaseChangeAttachmentSerializer.Meta.fields + ('custom_field',)
 
 
 class UnknownBookSerializer(serializers.ModelSerializer):
