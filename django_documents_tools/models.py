@@ -209,6 +209,20 @@ class BaseSnapshot(Dated):
 
 class Changes:
 
+    DEFAULT_CHANGE_ATTACHMENT_OPTIONS = {
+        'bases': (BaseChangeAttachment,),
+        'base_viewset': None,
+        'base_serializer': None,
+        'model_name': None,
+        'table_name': None,
+        'verbose_name': None,
+        'verbose_name_template': (
+            '{model._meta.verbose_name} change attachment'),
+        'verbose_name_plural': None,
+        'verbose_name_plural_template': (
+            '{model._meta.verbose_name} change attachments'),
+    }
+
     DEFAULT_CHANGE_OPTS = {
         'bases': (BaseChange,),
         'base_viewset': None,
@@ -237,6 +251,7 @@ class Changes:
     }
     change_model = None
     snapshot_model = None
+    change_attachment_model = None
     module = None
     cls = None
 
@@ -248,7 +263,8 @@ class Changes:
             fields_processors=None,
             app=None,
             change_opts=None,
-            snapshot_opts=None
+            snapshot_opts=None,
+            change_attachment_opts=None,
     ):
         self.fields_processors = fields_processors or FIELDS_PROCESSORS
         self.inherit = inherit
@@ -260,6 +276,10 @@ class Changes:
             **self.DEFAULT_CHANGE_OPTS, **(change_opts or {})}
         self.snapshot_opts = {
             **self.DEFAULT_SNAPSHOT_OPTS, **(snapshot_opts or {})}
+        self.change_attachment_opts = {
+            **self.DEFAULT_CHANGE_ATTACHMENT_OPTIONS,
+            **(change_attachment_opts or {})
+        }
 
         unit_size = self.snapshot_opts.get('unit_size_in_days')
         if not isinstance(unit_size, int) or unit_size < 0:
@@ -280,6 +300,8 @@ class Changes:
 
         self.snapshot_model = self.create_snapshot_model(sender, inherited)
         self.change_model = self.create_change_model(sender, inherited)
+        self.change_attachment_model = self.create_change_attachment_model(
+            sender, inherited)
 
         module = importlib.import_module(self.module)
         if inherited:
