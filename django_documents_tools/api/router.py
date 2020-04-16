@@ -24,4 +24,4 @@ class DocumentedRouter(DefaultRouter):
     def register(self, prefix, viewset, basename=None, base_name=None):
         if getattr(viewset, 'allow_changes', True):
             self.register_viewsets(viewset)
-        super().register(prefix, viewset, base_name)
+        super().register(prefix, viewset, basename, base_name)

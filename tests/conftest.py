@@ -1,3 +1,5 @@
+import pytest
+
 import django
 from django.conf import settings
 
@@ -49,3 +51,15 @@ def pytest_configure(config):
         )
     )
     django.setup()
+
+
+@pytest.fixture
+def book_change_model():
+    from tests.models import Book
+
+    return Book.changes.model
+
+
+@pytest.fixture
+def book_snapshot_model(book_change_model):
+    return book_change_model._meta.get_field('snapshot').related_model  # noqa: protected-access

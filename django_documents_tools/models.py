@@ -196,7 +196,8 @@ class Changes:
 
     DEFAULT_CHANGE_OPTS = {
         'bases': (BaseChange,),
-        'bases_viewsets': (),
+        'base_viewset': None,
+        'base_serializer': None,
         'manager_name': 'changes',
         'model_name': None,
         'table_name': None,
@@ -208,7 +209,8 @@ class Changes:
 
     DEFAULT_SNAPSHOT_OPTS = {
         'bases': (BaseSnapshot,),
-        'bases_viewsets': (),
+        'base_serializer': None,
+        'base_viewset': None,
         'unit_size_in_days': None,
         'manager_name': 'snapshots',
         'model_name': None,
@@ -289,7 +291,9 @@ class Changes:
         attrs = {
             '__module__': self.get_module(model, inherited),
             '_documented_excluded_fields': self.excluded_fields,
-            'bases_viewsets': self.change_opts['bases_viewsets']}
+            '_base_viewset': self.change_opts['base_viewset'],
+            '_base_serializer': self.change_opts['base_serializer'],
+        }
         opts = model._meta   # noqa protected-access
 
         primary_field_name = opts.model_name
@@ -335,7 +339,9 @@ class Changes:
         attrs = {
             '__module__': self.get_module(model, inherited),
             'unit_size_in_days': self.snapshot_opts['unit_size_in_days'],
-            'bases_viewsets': self.snapshot_opts['bases_viewsets']}
+            '_base_viewset': self.snapshot_opts['base_viewset'],
+            '_base_serializer': self.snapshot_opts['base_serializer'],
+        }
 
         src_fields = self.get_fields(model)
         fields = self.copy_fields(src_fields)

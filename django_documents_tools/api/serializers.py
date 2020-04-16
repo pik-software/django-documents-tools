@@ -1,5 +1,6 @@
-from django.db import models
 from rest_framework import serializers
+from django.db import models
+from django.utils.module_loading import import_string
 
 from ..settings import tools_settings
 
@@ -7,7 +8,7 @@ from ..settings import tools_settings
 NON_REQUIRED_KWARGS = {'required': False, 'allow_null': True}
 
 
-class ChangeSerializerBase(tools_settings.BASE_SERIALIZER):
+class BaseChangeSerializer(serializers.ModelSerializer):
     document_link = serializers.URLField(default='', allow_blank=True)
     document_fields = serializers.ListField(default=[])
 
@@ -19,7 +20,7 @@ class ChangeSerializerBase(tools_settings.BASE_SERIALIZER):
             'document_fields')
 
 
-class SnapshotSerializerBase(tools_settings.BASE_SERIALIZER):
+class BaseSnapshotSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (
@@ -27,10 +28,10 @@ class SnapshotSerializerBase(tools_settings.BASE_SERIALIZER):
             'document_fields', 'history_date')
 
 
-class DocumentedModelLinkSerializer(tools_settings.BASE_SERIALIZER):
+class BaseDocumentedModelLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
-        fields = ('_uid', '_type', '_version')
+        fields = ('_uid', '_type', '_version', 'created', 'updated')
 
 
 def clone_serializer_field(field, **kwargs):
@@ -45,10 +46,21 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
         3. Copying implicitly defined fields with extra_kwargs={required:False}
     """
 
+    if model._base_serializer:  # noqa: protected-access
+        base_change_serializer = import_string(model._base_serializer)  # noqa: protected-access
+    else:
+        base_change_serializer = import_string(
+            tools_settings.BASE_CHANGE_SERIALIZER)
+
+    if not issubclass(base_change_serializer, BaseChangeSerializer):
+        raise Exception(
+            f'{base_change_serializer.__name__} must be subclass of '
+            f'{BaseChangeSerializer.__name__}')
+
     opts = model._meta  # noqa: protected-access
     documented_field = model._documented_model_field  # noqa: protected-access
     documented_model = serializer_class.Meta.model
-    fields = (ChangeSerializerBase.Meta.fields + model._all_documented_fields  # noqa: protected-access
+    fields = (base_change_serializer.Meta.fields + model._all_documented_fields  # noqa: protected-access
               + (documented_field, ))
 
     attrs = {}
@@ -68,37 +80,56 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
     attrs[documented_field] = get_documented_model_serializer(
         documented_model)(**NON_REQUIRED_KWARGS)
     attrs['Meta'] = type(
-        'Meta', (ChangeSerializerBase.Meta,),
+        'Meta', (base_change_serializer.Meta,),
         {'model': model, 'fields': fields, 'read_only_fields': [],
          'extra_kwargs': implicit_fields_extra_kwargs})
 
     name = f'{opts.object_name}Serializer'
-    return type(name, (ChangeSerializerBase,), attrs)
+    return type(name, (base_change_serializer,), attrs)
 
 
 def get_documented_model_serializer(model):
+    base = import_string(
+        tools_settings.BASE_DOCUMENTED_MODEL_LINK_SERIALIZER)
+
+    if not issubclass(base, BaseDocumentedModelLinkSerializer):
+        raise Exception(
+            f'{base.__name__} must be subclass of '
+            f'{BaseDocumentedModelLinkSerializer.__name__}')
+
     attrs = {
         'Meta': type(
-            'Meta', (DocumentedModelLinkSerializer.Meta,),
+            'Meta', (base.Meta,),
             {'model': model, 'ref_name': model._meta.object_name})}  # noqa: protected-access
     name = f'LinkTo{model._meta.object_name}Serializer'  # noqa: protected-access
-    return type(name, (DocumentedModelLinkSerializer, ), attrs)
+    return type(name, (base,), attrs)
 
 
 def get_snapshot_serializer(model, change_serializer):
+    if model._base_serializer:  # noqa: protected-access
+        base_snapshot_serializer = import_string(model._base_serializer)  # noqa: protected-access
+    else:
+        base_snapshot_serializer = import_string(
+            tools_settings.BASE_SNAPSHOT_SERIALIZER)
+
+    if not issubclass(base_snapshot_serializer, BaseSnapshotSerializer):
+        raise Exception(
+            f'{base_snapshot_serializer.__name__} must be subclass of '
+            f'{BaseSnapshotSerializer.__name__}')
+
     change_model = change_serializer.Meta.model
     documented_model_field = change_model._documented_model_field  # noqa: protected-access
     documented_model = getattr(
         model, change_model._documented_model_field).field.related_model  # noqa: protected-access
-    fields = (SnapshotSerializerBase.Meta.fields
-              + change_model._all_documented_fields  # noqa: protected-access
+    fields = (base_snapshot_serializer.Meta.fields + change_model._all_documented_fields  # noqa: protected-access
               + (documented_model_field, ))
 
     attrs = {
-        'Meta': type('Meta', (SnapshotSerializerBase.Meta,),
+        'Meta': type('Meta', (base_snapshot_serializer.Meta,),
                      {'model': model, 'fields': fields})}
     attrs[documented_model_field] = get_documented_model_serializer(
         documented_model)(**NON_REQUIRED_KWARGS)
 
     name = f'{model._meta.object_name}Serializer'  # noqa: protected-access
-    return type(name, (SnapshotSerializerBase, change_serializer), attrs)
+    bases = (base_snapshot_serializer, change_serializer)
+    return type(name, bases, attrs)
