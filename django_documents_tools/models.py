@@ -16,7 +16,8 @@ from .manager import ChangeDescriptor, SnapshotDescriptor
 from .exceptions import (
     BusinessEntityCreationIsNotAllowedError, ChangesAreNotCreatedYetError)
 from .settings import tools_settings as t_settings
-from .utils import get_change_attachment_path
+from .utils import get_change_attachment_file_path
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -78,6 +79,7 @@ class BaseChange(Dated):
     tracker: FieldTracker = None
 
     snapshot = None
+    attachment = None
     document_name = models.CharField(_('Название изменения'), max_length=255)
     document_date = models.DateTimeField(_('Дата применения'), db_index=True)
     document_link = models.URLField(
@@ -138,12 +140,11 @@ class BaseChange(Dated):
 
 class BaseChangeAttachment(Dated):
     _help_text = _(
-        'Вложение к документу - модель для хранения пользовательских файлов, '
-        'прикрепленных к документу')
+        'Вложение к документу - модель для хранения пользовательского файла, '
+        'прикрепленного к документу')
 
-    change = None
-    attachment = models.FileField(
-        verbose_name=_('вложение'), upload_to=get_change_attachment_path)
+    file = models.FileField(
+        verbose_name=_('вложение'), upload_to=get_change_attachment_file_path)
 
     class Meta:
         abstract = True
@@ -301,10 +302,10 @@ class Changes:
             if not inherited:
                 return  # set in abstract
 
-        self.snapshot_model = self.create_snapshot_model(sender, inherited)
-        self.change_model = self.create_change_model(sender, inherited)
         self.change_attachment_model = self.create_change_attachment_model(
             sender, inherited)
+        self.snapshot_model = self.create_snapshot_model(sender, inherited)
+        self.change_model = self.create_change_model(sender, inherited)
 
         module = importlib.import_module(self.module)
         if inherited:
@@ -353,16 +354,22 @@ class Changes:
         attrs['permitted_fields'] = {
             '{app_label}.change_{model_name}': (
                 'document_name', 'document_date', 'document_link',
-                'document_is_draft', 'document_fields',
+                'document_is_draft', 'document_fields', 'attachment',
                 primary_field_name, *documented_fields),
             '{app_label}.add_{model_name}': (
                 'document_name', 'document_date', 'document_link',
-                'document_is_draft', 'document_fields',
+                'document_is_draft', 'document_fields', 'attachment',
                 primary_field_name, *documented_fields)}
+        attachment_title = (
+            self.change_attachment_model._meta.verbose_name.title())  # noqa: protected-access
         attrs['snapshot'] = models.ForeignKey(
             self.snapshot_model, on_delete=models.DO_NOTHING,
             related_name='changes', null=True, blank=True,
             verbose_name=self.snapshot_model._meta.verbose_name.title())  # noqa: protected-access
+        attrs['attachment'] = models.OneToOneField(
+            self.change_attachment_model, on_delete=models.SET_NULL,
+            related_name='change', null=True, blank=True,
+            verbose_name=attachment_title)  # noqa: protected-access
         base_meta = {
             'ordering': ('-document_date',),
             'get_latest_by': 'document_date'}
@@ -388,12 +395,8 @@ class Changes:
             '_base_serializer': self.change_attachment_opts['base_serializer'],
         }
         attrs['permitted_fields'] = {
-            '{app_label}.change_{model_name}': ('change', 'attachment')
+            '{app_label}.change_{model_name}': ('file',)
         }
-        attrs['change'] = models.ForeignKey(
-            self.change_model, on_delete=models.CASCADE,
-            related_name='attachments', blank=True, null=True,
-            verbose_name=self.change_model._meta.verbose_name.title())  # noqa protected-access
         base_meta_opts = {
             'ordering': ('-created',),
             'db_table': self.change_attachment_opts.get('table_name')

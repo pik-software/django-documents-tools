@@ -40,8 +40,8 @@ class TestGetChangeSerializerClass:
         assert book_change_serializer.Meta.fields == (
             '_uid', '_type', '_version', 'created', 'updated', 'document_name',
             'document_date', 'document_link', 'document_is_draft',
-            'document_fields', 'title', 'author', 'summary', 'isbn',
-            'is_published', 'book')
+            'document_fields', 'attachment', 'title', 'author', 'summary',
+            'isbn', 'is_published', 'book')
 
     def test_get_custom(self, book_change_model):
         custom_settings = {
@@ -56,8 +56,8 @@ class TestGetChangeSerializerClass:
         assert book_change_serializer.Meta.fields == (
             '_uid', '_type', '_version', 'created', 'updated', 'document_name',
             'document_date', 'document_link', 'document_is_draft',
-            'document_fields', 'custom_field', 'title', 'author', 'summary',
-            'isbn', 'is_published', 'book')
+            'document_fields', 'attachment', 'custom_field', 'title', 'author',
+            'summary', 'isbn', 'is_published', 'book')
 
     def test_get_unknown(self, book_change_model):
         custom_settings = {
@@ -80,8 +80,8 @@ class TestGetChangeSerializerClass:
         assert book_change_serializer.Meta.fields == (
             '_uid', '_type', '_version', 'created', 'updated', 'document_name',
             'document_date', 'document_link', 'document_is_draft',
-            'document_fields', 'custom_field', 'title', 'author', 'summary',
-            'isbn', 'is_published', 'book')
+            'document_fields', 'attachment', 'custom_field', 'title', 'author',
+            'summary', 'isbn', 'is_published', 'book')
 
 
 class TestGetSnapshotSerializerClass:
@@ -199,58 +199,52 @@ class TestGetChangeAttachmentSerializerClass:
         'BaseChangeAttachmentSerializer')
 
     @staticmethod
-    def test_get_default(book_change_model, book_change_attachment_model):
+    def test_get_default(book_change_attachment_model):
         book_change_attachment_serializer = get_change_attachment_serializer(
-            book_change_attachment_model, book_change_model)
+            book_change_attachment_model)
 
         assert issubclass(
             book_change_attachment_serializer, BaseChangeAttachmentSerializer)
         assert book_change_attachment_serializer.Meta.fields == (
-            '_uid', '_type', '_version', 'created', 'updated', 'change',
-            'attachment')
+            '_uid', '_type', '_version', 'created', 'updated', 'file')
 
-    def test_get_custom(self, book_change_model, book_change_attachment_model):
+    def test_get_custom(self, book_change_attachment_model):
         custom_settings = {
             self.setting_name: self.custom_serializer_path
         }
 
         with override_settings(DOCUMENTS_TOOLS=custom_settings):
             book_change_attachment_serializer = (
-                get_change_attachment_serializer(
-                    book_change_attachment_model, book_change_model))
+                get_change_attachment_serializer(book_change_attachment_model))
 
         assert issubclass(
             book_change_attachment_serializer,
             CustomChangeAttachmentSerializer)
         assert book_change_attachment_serializer.Meta.fields == (
-            '_uid', '_type', '_version', 'created', 'updated', 'change',
-            'attachment', 'custom_field')
+            '_uid', '_type', '_version', 'created', 'updated', 'file',
+            'custom_field')
 
-    def test_get_unknown(
-            self, book_change_model, book_change_attachment_model):
+    def test_get_unknown(self, book_change_attachment_model):
         custom_settings = {
             self.setting_name: UNKNOWN_SERIALIZER_PATH
         }
 
         with override_settings(DOCUMENTS_TOOLS=custom_settings):
             with pytest.raises(Exception) as exc_info:
-                get_change_attachment_serializer(
-                    book_change_attachment_model, book_change_model)
+                get_change_attachment_serializer(book_change_attachment_model)
             assert exc_info.value.args[0] == self.expected_error_msg
 
-    def test_get_for_model(
-            self, book_change_model, book_change_attachment_model):
+    def test_get_for_model(self, book_change_attachment_model):
 
         with mock.patch.object(
                 book_change_attachment_model, '_base_serializer',
                 self.custom_serializer_path):
             book_change_attachment_serializer = (
-                get_change_attachment_serializer(
-                    book_change_attachment_model, book_change_model))
+                get_change_attachment_serializer(book_change_attachment_model))
 
         assert issubclass(
             book_change_attachment_serializer,
             CustomChangeAttachmentSerializer)
         assert book_change_attachment_serializer.Meta.fields == (
-            '_uid', '_type', '_version', 'created', 'updated',
-            'change', 'attachment', 'custom_field')
+            '_uid', '_type', '_version', 'created', 'updated', 'file',
+            'custom_field')

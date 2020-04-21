@@ -16,8 +16,9 @@ BASE_CHANGE_ATTACHMENT_SERIALIZER = (
     'django_documents_tools.api.serializers.BaseChangeAttachmentSerializer')
 BASE_CHANGE_ATTACHMENT_VIEWSET = (
     'django_documents_tools.api.viewsets.BaseChangeAttachmentViewSet')
-BASE_CHANGE_LINK_SERIALIZER = (
-    'django_documents_tools.api.serializers.BaseChangeLinkSerializer')
+BASE_CHANGE_ATTACHMENT_LINK_SERIALIZER = (
+    'django_documents_tools.api.serializers.'
+    'BaseChangeAttachmentLinkSerializer')
 BASE_DOCUMENTED_MODEL_LINK_SERIALIZER = (
     'django_documents_tools.api.serializers.BaseDocumentedModelLinkSerializer')
 
@@ -42,7 +43,8 @@ class ToolsSettings(ChainMap): # noqa: too-many-ancestors
         'BASE_CHANGE_VIEWSET': BASE_CHANGE_VIEWSET,
         'BASE_CHANGE_ATTACHMENT_SERIALIZER': BASE_CHANGE_ATTACHMENT_SERIALIZER,
         'BASE_CHANGE_ATTACHMENT_VIEWSET': BASE_CHANGE_ATTACHMENT_VIEWSET,
-        'BASE_CHANGE_LINK_SERIALIZER': BASE_CHANGE_LINK_SERIALIZER,
+        'BASE_CHANGE_ATTACHMENT_LINK_SERIALIZER': (
+            BASE_CHANGE_ATTACHMENT_LINK_SERIALIZER),
         'BASE_DOCUMENTED_MODEL_LINK_SERIALIZER': (
             BASE_DOCUMENTED_MODEL_LINK_SERIALIZER),
         'CREATE_BUSINESS_ENTITY_AFTER_CHANGE_CREATED': False

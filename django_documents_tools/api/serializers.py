@@ -17,7 +17,7 @@ class BaseChangeSerializer(serializers.ModelSerializer):
         fields = (
             '_uid', '_type', '_version', 'created', 'updated', 'document_name',
             'document_date', 'document_link', 'document_is_draft',
-            'document_fields')
+            'document_fields', 'attachment')
 
 
 class BaseSnapshotSerializer(serializers.ModelSerializer):
@@ -34,7 +34,7 @@ class BaseDocumentedModelLinkSerializer(serializers.ModelSerializer):
         fields = ('_uid', '_type', '_version', 'created', 'updated')
 
 
-class BaseChangeLinkSerializer(serializers.ModelSerializer):
+class BaseChangeAttachmentLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
         fields = ('_uid', '_type', '_version', 'created', 'updated')
@@ -44,8 +44,7 @@ class BaseChangeAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (
-            '_uid', '_type', '_version', 'created', 'updated', 'change',
-            'attachment')
+            '_uid', '_type', '_version', 'created', 'updated', 'file')
 
 
 def clone_serializer_field(field, **kwargs):
@@ -72,6 +71,7 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
             f'{BaseChangeSerializer.__name__}')
 
     opts = model._meta  # noqa: protected-access
+    change_attachment_model = model.attachment.field.related_model
     documented_field = model._documented_model_field  # noqa: protected-access
     documented_model = serializer_class.Meta.model
     fields = (base_change_serializer.Meta.fields + model._all_documented_fields  # noqa: protected-access
@@ -93,6 +93,8 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
 
     attrs[documented_field] = get_documented_model_serializer(
         documented_model)(**NON_REQUIRED_KWARGS)
+    attrs['attachment'] = get_change_attachment_link_serializer(
+        change_attachment_model)(**NON_REQUIRED_KWARGS)
     attrs['Meta'] = type(
         'Meta', (base_change_serializer.Meta,),
         {'model': model, 'fields': fields, 'read_only_fields': [],
@@ -149,21 +151,21 @@ def get_snapshot_serializer(model, change_serializer):
     return type(name, bases, attrs)
 
 
-def get_change_link_serializer(change_model):
-    base = import_string(tools_settings.BASE_CHANGE_LINK_SERIALIZER)
+def get_change_attachment_link_serializer(model):
+    base = import_string(tools_settings.BASE_CHANGE_ATTACHMENT_LINK_SERIALIZER)
 
-    if not issubclass(base, BaseChangeLinkSerializer):
+    if not issubclass(base, BaseChangeAttachmentLinkSerializer):
         raise Exception(
             f'{base.__name__} must be subclass of '
-            f'{BaseChangeLinkSerializer.__name__}')
+            f'{BaseChangeAttachmentLinkSerializer.__name__}')
 
-    meta_opts = {'model': change_model, 'fields': base.Meta.fields}
+    meta_opts = {'model': model, 'fields': base.Meta.fields}
     meta = type('Meta', (base.Meta,), meta_opts)
-    name = f'{change_model._meta.object_name}LinkSerializer'  # noqa: protected-access
+    name = f'{model._meta.object_name}LinkSerializer'  # noqa: protected-access
     return type(name, (base, ), {'Meta': meta})
 
 
-def get_change_attachment_serializer(model, change_model):
+def get_change_attachment_serializer(model):
     if model._base_serializer:  # noqa: protected-access
         base_change_attachment_serializer = import_string(
             model._base_serializer)  # noqa: protected-access
@@ -180,11 +182,6 @@ def get_change_attachment_serializer(model, change_model):
     fields = base_change_attachment_serializer.Meta.fields
     meta_opts = {'model': model, 'fields': fields}
     meta = type('Meta', (base_change_attachment_serializer.Meta,), meta_opts)
-    attrs = {
-        'Meta': meta,
-        'change': get_change_link_serializer(change_model)(
-            **NON_REQUIRED_KWARGS),
-    }
-
+    attrs = {'Meta': meta}
     name = f'{model._meta.object_name}Serializer'  # noqa: protected-access
     return type(name, (base_change_attachment_serializer, ), attrs)

@@ -114,10 +114,10 @@ def get_change_attachment_viewset(change_viewset):
     change_model = change_viewset.serializer_class.Meta.model
     change_filter = change_viewset.filter_class
     change_attachment_model = (
-        change_model._meta.get_field('attachments').related_model)  # noqa: protected-access
+        change_model._meta.get_field('attachment').related_model)  # noqa: protected-access
 
     change_attachment_serializer = get_change_attachment_serializer(
-        change_attachment_model, change_model)
+        change_attachment_model)
 
     if change_attachment_model._base_viewset:  # noqa: protected-access
         base_change_attachment_viewset = import_string(
