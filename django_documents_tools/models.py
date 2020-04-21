@@ -284,6 +284,11 @@ class Changes:
             raise ValueError(
                 'You have to provide a valid value for unit_size_in_days')
 
+        if not bool(self.excluded_fields) ^ bool(self.included_fields):
+            raise ValueError(
+                'You have to provide either `excluded_fields` or '
+                '`included_fields`')
+
     def contribute_to_class(self, cls, name):
         self.module = cls.__module__
         self.cls = cls
@@ -482,11 +487,13 @@ class Changes:
     def get_fields(self, model):
         fields = []
         for field in model._meta.fields:  # noqa: protected-access
-            is_documented = (
-                not field.primary_key
-                and (field.editable or field.name in self.included_fields)
-                and field.name not in self.excluded_fields)
-            if is_documented:
+            if field.primary_key or not field.editable:
+                continue
+
+            if self.included_fields and field.name in self.included_fields:
+                fields.append(field)
+            elif (self.excluded_fields
+                  and field.name not in self.excluded_fields):
                 fields.append(field)
         return fields
 
