@@ -172,8 +172,7 @@ class Documented(BaseDocumented):
         change_attachment_opts={
             'bases': (BaseChangeAttachment,),
             'base_serializer': 'path.to.change_attachment_serializer_class',
-            'base_viewset': 'path.to.change_attachment_viewset_class', 
-            'unit_size_in_days': 1
+            'base_viewset': 'path.to.change_attachment_viewset_class',
         },
     )
 

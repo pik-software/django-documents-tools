@@ -1,8 +1,9 @@
 from rest_framework.viewsets import ModelViewSet
 from django.utils.module_loading import import_string
 
-from .filters import get_change_filter, get_snapshot_filter, \
-    get_change_attachment_filter
+from django_documents_tools.utils import check_subclass
+from .filters import (
+    get_change_filter, get_snapshot_filter, get_change_attachment_filter)
 from .serializers import (
     get_change_serializer_class, get_snapshot_serializer,
     get_change_attachment_serializer)
@@ -59,10 +60,7 @@ def get_change_viewset(documented_viewset):
     else:
         base_change_viewset = import_string(tools_settings.BASE_CHANGE_VIEWSET)
 
-    if not issubclass(base_change_viewset, BaseChangeViewSet):
-        raise Exception(
-            f'{base_change_viewset.__name__} must be subclass of '
-            f'{BaseChangeViewSet.__name__}')
+    check_subclass(base_change_viewset, BaseChangeViewSet)
 
     document_serializer = get_change_serializer_class(
         model, documented_viewset.serializer_class)
@@ -92,10 +90,7 @@ def get_snapshot_viewset(change_viewset, documented_viewset):
         base_snapshot_viewset = import_string(
             tools_settings.BASE_SNAPSHOT_VIEWSET)
 
-    if not issubclass(base_snapshot_viewset, BaseSnapshotViewSet):
-        raise Exception(
-            f'{base_snapshot_viewset.__name__} must be subclass of '
-            f'{BaseSnapshotViewSet.__name__}')
+    check_subclass(base_snapshot_viewset, BaseSnapshotViewSet)
 
     snapshot_serializer = get_snapshot_serializer(
         snapshot_model, change_serializer)
@@ -126,11 +121,7 @@ def get_change_attachment_viewset(change_viewset):
         base_change_attachment_viewset = import_string(
             tools_settings.BASE_CHANGE_ATTACHMENT_VIEWSET)
 
-    if not issubclass(
-            base_change_attachment_viewset, BaseChangeAttachmentViewSet):
-        raise Exception(
-            f'{base_change_attachment_viewset.__name__} must be subclass of '
-            f'{BaseChangeAttachmentViewSet.__name__}')
+    check_subclass(base_change_attachment_viewset, BaseChangeAttachmentViewSet)
 
     change_attachment_filter = get_change_attachment_filter(
         change_attachment_model, change_filter)

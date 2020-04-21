@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.db import models
 from django.utils.module_loading import import_string
 
+from django_documents_tools.utils import check_subclass
 from ..settings import tools_settings
 
 
@@ -64,11 +65,7 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
     else:
         base_change_serializer = import_string(
             tools_settings.BASE_CHANGE_SERIALIZER)
-
-    if not issubclass(base_change_serializer, BaseChangeSerializer):
-        raise Exception(
-            f'{base_change_serializer.__name__} must be subclass of '
-            f'{BaseChangeSerializer.__name__}')
+    check_subclass(base_change_serializer, BaseChangeSerializer)
 
     opts = model._meta  # noqa: protected-access
     change_attachment_model = model.attachment.field.related_model
@@ -107,11 +104,7 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
 def get_documented_model_serializer(model):
     base = import_string(
         tools_settings.BASE_DOCUMENTED_MODEL_LINK_SERIALIZER)
-
-    if not issubclass(base, BaseDocumentedModelLinkSerializer):
-        raise Exception(
-            f'{base.__name__} must be subclass of '
-            f'{BaseDocumentedModelLinkSerializer.__name__}')
+    check_subclass(base, BaseDocumentedModelLinkSerializer)
 
     attrs = {
         'Meta': type(
@@ -127,11 +120,7 @@ def get_snapshot_serializer(model, change_serializer):
     else:
         base_snapshot_serializer = import_string(
             tools_settings.BASE_SNAPSHOT_SERIALIZER)
-
-    if not issubclass(base_snapshot_serializer, BaseSnapshotSerializer):
-        raise Exception(
-            f'{base_snapshot_serializer.__name__} must be subclass of '
-            f'{BaseSnapshotSerializer.__name__}')
+    check_subclass(base_snapshot_serializer, BaseSnapshotSerializer)
 
     change_model = change_serializer.Meta.model
     documented_model_field = change_model._documented_model_field  # noqa: protected-access
@@ -153,11 +142,7 @@ def get_snapshot_serializer(model, change_serializer):
 
 def get_change_attachment_link_serializer(model):
     base = import_string(tools_settings.BASE_CHANGE_ATTACHMENT_LINK_SERIALIZER)
-
-    if not issubclass(base, BaseChangeAttachmentLinkSerializer):
-        raise Exception(
-            f'{base.__name__} must be subclass of '
-            f'{BaseChangeAttachmentLinkSerializer.__name__}')
+    check_subclass(base, BaseChangeAttachmentLinkSerializer)
 
     meta_opts = {'model': model, 'fields': base.Meta.fields}
     meta = type('Meta', (base.Meta,), meta_opts)
@@ -172,12 +157,8 @@ def get_change_attachment_serializer(model):
     else:
         base_change_attachment_serializer = import_string(
             tools_settings.BASE_CHANGE_ATTACHMENT_SERIALIZER)
-
-    if not issubclass(
-            base_change_attachment_serializer, BaseChangeAttachmentSerializer):
-        raise Exception(
-            f'{base_change_attachment_serializer.__name__} must be subclass of'
-            f' {BaseChangeAttachmentSerializer.__name__}')
+    check_subclass(
+        base_change_attachment_serializer, BaseChangeAttachmentSerializer)
 
     fields = base_change_attachment_serializer.Meta.fields
     meta_opts = {'model': model, 'fields': fields}
