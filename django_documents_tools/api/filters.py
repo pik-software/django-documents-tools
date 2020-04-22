@@ -1,7 +1,8 @@
 from django.contrib.postgres.fields import ArrayField
 from rest_framework.fields import DateTimeField
 from rest_framework_filters import (
-    FilterSet, RelatedFilter, IsoDateTimeFilter, BaseCSVFilter, AutoFilter)
+    FilterSet, RelatedFilter, IsoDateTimeFilter, BaseCSVFilter, AutoFilter,
+    BooleanFilter)
 
 
 UID_LOOKUPS = ('exact', 'gt', 'gte', 'lt', 'lte', 'in', 'isnull')
@@ -28,6 +29,18 @@ class ChangeFilterBase(FilterSet):
     document_link = AutoFilter(lookups=STRING_LOOKUPS)
     document_is_draft = AutoFilter(lookups=BOOLEAN_LOOKUPS)
     document_fields = ArrayFilter()
+    is_deleted = BooleanFilter(
+        field_name='deleted', method='filter_is_deleted')
+
+    @staticmethod
+    def filter_is_deleted(queryset, name, value):
+        if value is True:
+            return queryset.filter(deleted__isnull=False)
+
+        if value is False:
+            return queryset.filter(deleted__isnull=True)
+
+        return queryset
 
     class Meta:
         model = None
@@ -40,6 +53,18 @@ class ChangeFilterBase(FilterSet):
 class SnapshotFilterBase(FilterSet):
     updated = AutoFilter(lookups=DATE_LOOKUPS)
     history_date = AutoFilter(lookups=DATE_LOOKUPS)
+    is_deleted = BooleanFilter(
+        field_name='deleted', method='filter_is_deleted')
+
+    @staticmethod
+    def filter_is_deleted(queryset, name, value):
+        if value is True:
+            return queryset.filter(deleted__isnull=False)
+
+        if value is False:
+            return queryset.filter(deleted__isnull=True)
+
+        return queryset
 
     class Meta:
         model = None
@@ -62,6 +87,18 @@ class BaseChangeAttachmentFilter(FilterSet):
     updated = AutoFilter(lookups=DATE_LOOKUPS)
     created = AutoFilter(lookups=DATE_LOOKUPS)
     deleted = AutoFilter(lookups=DATE_LOOKUPS)
+    is_deleted = BooleanFilter(
+        field_name='deleted', method='filter_is_deleted')
+
+    @staticmethod
+    def filter_is_deleted(queryset, name, value):
+        if value is True:
+            return queryset.filter(deleted__isnull=False)
+
+        if value is False:
+            return queryset.filter(deleted__isnull=True)
+
+        return queryset
 
     class Meta:
         model = None
