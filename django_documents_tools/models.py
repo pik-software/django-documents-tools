@@ -199,7 +199,7 @@ class BaseSnapshot(Dated):
         return result
 
     def is_empty(self):
-        return all(v is None for v in self.state.values())
+        return not self.state
 
     def clear_attrs(self):
         for field_name in self.state:
