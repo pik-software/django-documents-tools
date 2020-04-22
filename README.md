@@ -180,3 +180,16 @@ class Documented(BaseDocumented):
         abstract = True
 
 ```
+
+## Signals
+This package provides several signals for use.
+
+## `change_applied` - Send after successful change application.
+Can be used for subscription for specific field updates.
+
+Provided `kwargs`:
+
+- `sender` - _Change_ model
+- `documented_instance` - Documented model instance
+- `change` - Change instance
+- `updated_fields` - Dictionary field -> new value
