@@ -4,7 +4,7 @@ from django.apps import apps
 from django.db import migrations
 from django.db.migrations.state import StateApps
 from django.db.models.signals import post_migrate
-from django.dispatch import receiver
+from django.dispatch import receiver, Signal
 
 
 def _rename_field(model, old_name, new_name):
@@ -56,3 +56,7 @@ def process_migrate(
             continue
         for operation in migration.operations:
             _process_operation(apps, migration.app_label, operation)
+
+
+change_applied = Signal(  # noqa: pylint=invalid-name
+    providing_args=['documented_instance', 'change', 'updated_fields'])
