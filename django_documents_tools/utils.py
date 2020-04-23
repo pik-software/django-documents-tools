@@ -1,5 +1,7 @@
 import os
 
+from django_documents_tools.manager import setattrs
+
 
 def get_change_attachment_file_path(instance, file_name):
     app_label = instance._meta.app_label  # noqa: protected-access
@@ -11,3 +13,25 @@ def check_subclass(base, original):
     if not issubclass(base, original):
         raise Exception(
             f'{base.__name__} must be subclass of {original.__name__}')
+
+
+def validate_change_attrs(model, attrs):
+    documented_model_field = model._documented_model_field  # noqa: protected-access
+    documented_model = model._meta.get_field(  # noqa: protected-access
+        documented_model_field).remote_field.model
+    change = model(**attrs)
+    kwargs = change.get_changes()
+
+    if documented_model_field in attrs:
+        documented_instance = attrs[documented_model_field]
+        snapshot = documented_instance.snapshots.filter(
+            history_date__gte=attrs['document_date']).first()
+
+        if snapshot:
+            kwargs = {**snapshot.state, **kwargs}
+
+        setattrs(documented_instance, **kwargs)
+        documented_instance.full_clean()
+    else:
+        new_documented = documented_model(**kwargs)
+        new_documented.full_clean()

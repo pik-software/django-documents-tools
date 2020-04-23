@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.db import models
 from django.utils.module_loading import import_string
 
-from django_documents_tools.utils import check_subclass
+from django_documents_tools.utils import check_subclass, validate_change_attrs
 from ..settings import tools_settings
 
 
@@ -12,6 +12,12 @@ NON_REQUIRED_KWARGS = {'required': False, 'allow_null': True}
 class BaseChangeSerializer(serializers.ModelSerializer):
     document_link = serializers.URLField(default='', allow_blank=True)
     document_fields = serializers.ListField(default=[])
+
+    def validate(self, attrs):
+        # Ensure that new documented obj will be in correct state.
+        validated_attrs = super().validate(attrs)
+        validate_change_attrs(self.Meta.model, validated_attrs)
+        return validated_attrs
 
     class Meta:
         model = None
