@@ -1,6 +1,7 @@
 import os
 
 from django_documents_tools.manager import setattrs
+from django_documents_tools.settings import tools_settings
 
 
 def get_change_attachment_file_path(instance, file_name):
@@ -32,6 +33,6 @@ def validate_change_attrs(model, attrs):
 
         setattrs(documented_instance, **kwargs)
         documented_instance.full_clean()
-    else:
+    elif tools_settings.CREATE_BUSINESS_ENTITY_AFTER_CHANGE_CREATED:
         new_documented = documented_model(**kwargs)
         new_documented.full_clean()
