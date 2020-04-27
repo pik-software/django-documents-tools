@@ -62,4 +62,9 @@ def book_change_model():
 
 @pytest.fixture
 def book_snapshot_model(book_change_model):
-    return book_change_model._meta.get_field('snapshot').related_model  # noqa: protected-access
+    return book_change_model.snapshot.field.related_model
+
+
+@pytest.fixture
+def book_change_attachment_model(book_change_model):
+    return book_change_model.attachment.field.related_model

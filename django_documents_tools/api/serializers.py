@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.db import models
 from django.utils.module_loading import import_string
 
+from django_documents_tools.utils import check_subclass
 from ..settings import tools_settings
 
 
@@ -17,7 +18,7 @@ class BaseChangeSerializer(serializers.ModelSerializer):
         fields = (
             '_uid', '_type', '_version', 'created', 'updated', 'document_name',
             'document_date', 'document_link', 'document_is_draft',
-            'document_fields')
+            'document_fields', 'attachment')
 
 
 class BaseSnapshotSerializer(serializers.ModelSerializer):
@@ -32,6 +33,19 @@ class BaseDocumentedModelLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
         fields = ('_uid', '_type', '_version', 'created', 'updated')
+
+
+class BaseChangeAttachmentLinkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = None
+        fields = ('_uid', '_type', '_version', 'created', 'updated')
+
+
+class BaseChangeAttachmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = None
+        fields = (
+            '_uid', '_type', '_version', 'created', 'updated', 'file')
 
 
 def clone_serializer_field(field, **kwargs):
@@ -51,13 +65,10 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
     else:
         base_change_serializer = import_string(
             tools_settings.BASE_CHANGE_SERIALIZER)
-
-    if not issubclass(base_change_serializer, BaseChangeSerializer):
-        raise Exception(
-            f'{base_change_serializer.__name__} must be subclass of '
-            f'{BaseChangeSerializer.__name__}')
+    check_subclass(base_change_serializer, BaseChangeSerializer)
 
     opts = model._meta  # noqa: protected-access
+    change_attachment_model = model.attachment.field.related_model
     documented_field = model._documented_model_field  # noqa: protected-access
     documented_model = serializer_class.Meta.model
     fields = (base_change_serializer.Meta.fields + model._all_documented_fields  # noqa: protected-access
@@ -79,6 +90,8 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
 
     attrs[documented_field] = get_documented_model_serializer(
         documented_model)(**NON_REQUIRED_KWARGS)
+    attrs['attachment'] = get_change_attachment_link_serializer(
+        change_attachment_model)(**NON_REQUIRED_KWARGS)
     attrs['Meta'] = type(
         'Meta', (base_change_serializer.Meta,),
         {'model': model, 'fields': fields, 'read_only_fields': [],
@@ -91,11 +104,7 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
 def get_documented_model_serializer(model):
     base = import_string(
         tools_settings.BASE_DOCUMENTED_MODEL_LINK_SERIALIZER)
-
-    if not issubclass(base, BaseDocumentedModelLinkSerializer):
-        raise Exception(
-            f'{base.__name__} must be subclass of '
-            f'{BaseDocumentedModelLinkSerializer.__name__}')
+    check_subclass(base, BaseDocumentedModelLinkSerializer)
 
     attrs = {
         'Meta': type(
@@ -111,11 +120,7 @@ def get_snapshot_serializer(model, change_serializer):
     else:
         base_snapshot_serializer = import_string(
             tools_settings.BASE_SNAPSHOT_SERIALIZER)
-
-    if not issubclass(base_snapshot_serializer, BaseSnapshotSerializer):
-        raise Exception(
-            f'{base_snapshot_serializer.__name__} must be subclass of '
-            f'{BaseSnapshotSerializer.__name__}')
+    check_subclass(base_snapshot_serializer, BaseSnapshotSerializer)
 
     change_model = change_serializer.Meta.model
     documented_model_field = change_model._documented_model_field  # noqa: protected-access
@@ -133,3 +138,31 @@ def get_snapshot_serializer(model, change_serializer):
     name = f'{model._meta.object_name}Serializer'  # noqa: protected-access
     bases = (base_snapshot_serializer, change_serializer)
     return type(name, bases, attrs)
+
+
+def get_change_attachment_link_serializer(model):
+    base = import_string(tools_settings.BASE_CHANGE_ATTACHMENT_LINK_SERIALIZER)
+    check_subclass(base, BaseChangeAttachmentLinkSerializer)
+
+    meta_opts = {'model': model, 'fields': base.Meta.fields}
+    meta = type('Meta', (base.Meta,), meta_opts)
+    name = f'{model._meta.object_name}LinkSerializer'  # noqa: protected-access
+    return type(name, (base, ), {'Meta': meta})
+
+
+def get_change_attachment_serializer(model):
+    if model._base_serializer:  # noqa: protected-access
+        base_change_attachment_serializer = import_string(
+            model._base_serializer)  # noqa: protected-access
+    else:
+        base_change_attachment_serializer = import_string(
+            tools_settings.BASE_CHANGE_ATTACHMENT_SERIALIZER)
+    check_subclass(
+        base_change_attachment_serializer, BaseChangeAttachmentSerializer)
+
+    fields = base_change_attachment_serializer.Meta.fields
+    meta_opts = {'model': model, 'fields': fields}
+    meta = type('Meta', (base_change_attachment_serializer.Meta,), meta_opts)
+    attrs = {'Meta': meta}
+    name = f'{model._meta.object_name}Serializer'  # noqa: protected-access
+    return type(name, (base_change_attachment_serializer, ), attrs)

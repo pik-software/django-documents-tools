@@ -16,6 +16,8 @@ from .manager import ChangeDescriptor, SnapshotDescriptor
 from .exceptions import (
     BusinessEntityCreationIsNotAllowedError, ChangesAreNotCreatedYetError)
 from .settings import tools_settings as t_settings
+from .signals import change_applied
+from .utils import get_change_attachment_file_path
 
 
 LOGGER = logging.getLogger(__name__)
@@ -78,6 +80,7 @@ class BaseChange(Dated):
     tracker: FieldTracker = None
 
     snapshot = None
+    attachment = None
     document_name = models.CharField(_('Название изменения'), max_length=255)
     document_date = models.DateTimeField(_('Дата применения'), db_index=True)
     document_link = models.URLField(
@@ -131,9 +134,26 @@ class BaseChange(Dated):
                 raise BusinessEntityCreationIsNotAllowedError()
 
             applicable_date = timezone.now().date()
-            new_documented.changes.apply_to_object(date=applicable_date)
+            _, updated_fields = new_documented.changes.apply_to_object(
+                date=applicable_date)
+
             new_documented.save()
             self.refresh_from_db()
+            change_applied.send(
+                sender=self.__class__, documented_instance=new_documented,
+                change=self, updated_fields=updated_fields)
+
+
+class BaseChangeAttachment(Dated):
+    _help_text = _(
+        'Вложение к документу - модель для хранения пользовательского файла, '
+        'прикрепленного к документу')
+
+    file = models.FileField(
+        verbose_name=_('вложение'), upload_to=get_change_attachment_file_path)
+
+    class Meta:
+        abstract = True
 
 
 class BaseSnapshot(Dated):
@@ -185,7 +205,7 @@ class BaseSnapshot(Dated):
         return result
 
     def is_empty(self):
-        return all(v is None for v in self.state.values())
+        return not self.state
 
     def clear_attrs(self):
         for field_name in self.state:
@@ -193,6 +213,20 @@ class BaseSnapshot(Dated):
 
 
 class Changes:
+
+    DEFAULT_CHANGE_ATTACHMENT_OPTIONS = {
+        'bases': (BaseChangeAttachment,),
+        'base_viewset': None,
+        'base_serializer': None,
+        'model_name': None,
+        'table_name': None,
+        'verbose_name': None,
+        'verbose_name_template': (
+            '{model._meta.verbose_name} change attachment'),
+        'verbose_name_plural': None,
+        'verbose_name_plural_template': (
+            '{model._meta.verbose_name} change attachments'),
+    }
 
     DEFAULT_CHANGE_OPTS = {
         'bases': (BaseChange,),
@@ -222,6 +256,7 @@ class Changes:
     }
     change_model = None
     snapshot_model = None
+    change_attachment_model = None
     module = None
     cls = None
 
@@ -233,7 +268,8 @@ class Changes:
             fields_processors=None,
             app=None,
             change_opts=None,
-            snapshot_opts=None
+            snapshot_opts=None,
+            change_attachment_opts=None,
     ):
         self.fields_processors = fields_processors or FIELDS_PROCESSORS
         self.inherit = inherit
@@ -245,11 +281,20 @@ class Changes:
             **self.DEFAULT_CHANGE_OPTS, **(change_opts or {})}
         self.snapshot_opts = {
             **self.DEFAULT_SNAPSHOT_OPTS, **(snapshot_opts or {})}
+        self.change_attachment_opts = {
+            **self.DEFAULT_CHANGE_ATTACHMENT_OPTIONS,
+            **(change_attachment_opts or {})
+        }
 
         unit_size = self.snapshot_opts.get('unit_size_in_days')
         if not isinstance(unit_size, int) or unit_size < 0:
             raise ValueError(
                 'You have to provide a valid value for unit_size_in_days')
+
+        if not bool(self.excluded_fields) ^ bool(self.included_fields):
+            raise ValueError(
+                'You have to provide either `excluded_fields` or '
+                '`included_fields`')
 
     def contribute_to_class(self, cls, name):
         self.module = cls.__module__
@@ -263,6 +308,8 @@ class Changes:
             if not inherited:
                 return  # set in abstract
 
+        self.change_attachment_model = self.create_change_attachment_model(
+            sender, inherited)
         self.snapshot_model = self.create_snapshot_model(sender, inherited)
         self.change_model = self.create_change_model(sender, inherited)
 
@@ -282,6 +329,10 @@ class Changes:
         setattr(sender, self.snapshot_opts['manager_name'], descriptor)
         sender._meta.snapshot_manager_attribute = self.snapshot_opts[  # noqa: protected-access
             'manager_name']
+
+        setattr(
+            module, self.change_attachment_model.__name__,
+            self.change_attachment_model)
 
     def create_change_model(self, model, inherited):
         """
@@ -309,16 +360,22 @@ class Changes:
         attrs['permitted_fields'] = {
             '{app_label}.change_{model_name}': (
                 'document_name', 'document_date', 'document_link',
-                'document_is_draft', 'document_fields',
+                'document_is_draft', 'document_fields', 'attachment',
                 primary_field_name, *documented_fields),
             '{app_label}.add_{model_name}': (
                 'document_name', 'document_date', 'document_link',
-                'document_is_draft', 'document_fields',
+                'document_is_draft', 'document_fields', 'attachment',
                 primary_field_name, *documented_fields)}
+        attachment_title = (
+            self.change_attachment_model._meta.verbose_name.title())  # noqa: protected-access
         attrs['snapshot'] = models.ForeignKey(
             self.snapshot_model, on_delete=models.DO_NOTHING,
             related_name='changes', null=True, blank=True,
             verbose_name=self.snapshot_model._meta.verbose_name.title())  # noqa: protected-access
+        attrs['attachment'] = models.OneToOneField(
+            self.change_attachment_model, on_delete=models.SET_NULL,
+            related_name='change', null=True, blank=True,
+            verbose_name=attachment_title)  # noqa: protected-access
         base_meta = {
             'ordering': ('-document_date',),
             'get_latest_by': 'document_date'}
@@ -331,6 +388,36 @@ class Changes:
             if self.change_opts['model_name'] is not None
             else '%sChange' % opts.object_name)
         return type(str(name), self.change_opts['bases'], attrs)
+
+    def create_change_attachment_model(self, model, inherited):
+        """
+        Create change attachment model
+        """
+
+        opts = model._meta  # noqa protected-access
+        attrs = {
+            '__module__': self.get_module(model, inherited),
+            '_base_viewset': self.change_attachment_opts['base_viewset'],
+            '_base_serializer': self.change_attachment_opts['base_serializer'],
+        }
+        attrs['permitted_fields'] = {
+            '{app_label}.change_{model_name}': ('file',)
+        }
+        base_meta_opts = {
+            'ordering': ('-created',),
+            'db_table': self.change_attachment_opts.get('table_name')
+        }
+
+        if self.change_attachment_opts['model_name']:
+            name = self.change_attachment_opts['model_name']
+        else:
+            name = f'{opts.object_name}ChangeAttachment'
+
+        meta_opts = self.get_meta_options(
+            model, base_meta_opts, self.change_attachment_opts)
+        attrs['Meta'] = type('Meta', (), meta_opts)
+
+        return type(name, self.change_attachment_opts['bases'], attrs)
 
     def create_snapshot_model(self, model, inherited):
         """
@@ -409,11 +496,13 @@ class Changes:
     def get_fields(self, model):
         fields = []
         for field in model._meta.fields:  # noqa: protected-access
-            is_documented = (
-                not field.primary_key
-                and (field.editable or field.name in self.included_fields)
-                and field.name not in self.excluded_fields)
-            if is_documented:
+            if field.primary_key or not field.editable:
+                continue
+
+            if self.included_fields and field.name in self.included_fields:
+                fields.append(field)
+            elif (self.excluded_fields
+                  and field.name not in self.excluded_fields):
                 fields.append(field)
         return fields
 

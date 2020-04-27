@@ -344,3 +344,17 @@ def test_use_initial_snapshot_from_right_documented_object():
     assert change_2.book.title == expected_title
     assert BookChange.objects.count() == 2
     assert Book.objects.count() == 2
+
+
+@pytest.mark.django_db
+def test_create_change_attachment(
+        book_change_model, book_change_attachment_model):
+    book = Book.objects.create(title='foo', author=_create_author())
+    book_change_attachment = book_change_attachment_model.objects.create(
+        file='test.pdf')
+    book_change = book_change_model.objects.create(
+        book=book, document_is_draft=False, document_date=timezone.now(),
+        document_fields=['title', 'author'], title='bar',
+        attachment=book_change_attachment)
+
+    assert book_change.attachment == book_change_attachment

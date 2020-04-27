@@ -25,7 +25,7 @@ class Documented(BaseDocumented):
 
     changes = Changes(
         inherit=True,
-        excluded_fields=('deleted',),
+        excluded_fields=('deleted', 'created', 'updated'),
         change_opts={
             'bases': (BaseChangeModel,)},
         snapshot_opts={

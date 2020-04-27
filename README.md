@@ -13,22 +13,26 @@ pip install django-documents-tools
 2 Add `django_documents_tools` to your INSTALLED_APPS setting like this:
 
 ```python
-    INSTALLED_APPS = [
-        ...
-        django_documents_tools,
-    ]
+INSTALLED_APPS = [
+    ...,
+    'django_documents_tools',
+]
 ```
 
 3 Configure the settings as you want
 
 ```python
-    DOCUMENTS_TOOLS = {
-        'BASE_CHANGE_SERIALIZER': 'path_to_your_model_serializer',
-        'BASE_CHANGE_VIEWSET': 'path_to_your_model_viewset',
-        'BASE_SNAPSHOT_SERIALIZER': 'path_to_your_model_serializer',
-        'BASE_SNAPSHOT_VIEWSET': 'path_to_your_model_viewset',
-        'BASE_DOCUMENTED_MODEL_LINK_SERIALIZER': 'path_to_your_model_serializer',
-        'CREATE_BUSINESS_ENTITY_AFTER_CHANGE_CREATED': False}
+DOCUMENTS_TOOLS = {
+    'BASE_CHANGE_SERIALIZER': 'path_to_your_model_serializer',
+    'BASE_CHANGE_VIEWSET': 'path_to_your_model_viewset',
+    'BASE_SNAPSHOT_SERIALIZER': 'path_to_your_model_serializer',
+    'BASE_SNAPSHOT_VIEWSET': 'path_to_your_model_viewset',
+    'BASE_DOCUMENTED_MODEL_LINK_SERIALIZER': 'path_to_your_model_serializer',
+    'BASE_CHANGE_ATTACHMENT_SERIALIZER': 'path_to_your_model_serializer',
+    'BASE_CHANGE_ATTACHMENT_VIEWSET': 'path_to_your_model_viewset',
+    'BASE_CHANGE_LINK_SERIALIZER': 'path_to_your_model_serializer',
+    'CREATE_BUSINESS_ENTITY_AFTER_CHANGE_CREATED': False
+}
 ```
 
 or just use the default values
@@ -146,7 +150,7 @@ They also must be subclasses of corresponding base classes.
 ```python
 
 from django_documents_tools.models import (
-    BaseDocumented, Changes, BaseChange, BaseSnapshot)
+    BaseDocumented, Changes, BaseChange, BaseSnapshot, BaseChangeAttachment)
 
 
 class Documented(BaseDocumented):
@@ -163,9 +167,29 @@ class Documented(BaseDocumented):
             'bases': (BaseSnapshot,),
             'base_serializer': 'path.to.snapshot_serializer_class',
             'base_viewset': 'path.to.snapshot_viewset_class', 
-            'unit_size_in_days': 1})
+            'unit_size_in_days': 1
+        },
+        change_attachment_opts={
+            'bases': (BaseChangeAttachment,),
+            'base_serializer': 'path.to.change_attachment_serializer_class',
+            'base_viewset': 'path.to.change_attachment_viewset_class',
+        },
+    )
 
     class Meta:
         abstract = True
 
 ```
+
+## Signals
+This package provides several signals for use.
+
+## `change_applied` - Send after successful change application.
+Can be used for subscription for specific field updates.
+
+Provided `kwargs`:
+
+- `sender` - _Change_ model
+- `documented_instance` - Documented model instance
+- `change` - Change instance
+- `updated_fields` - Dictionary field -> new value

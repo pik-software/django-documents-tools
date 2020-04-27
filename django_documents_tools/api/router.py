@@ -1,6 +1,7 @@
 from rest_framework.routers import DefaultRouter
 
-from .viewsets import get_change_viewset, get_snapshot_viewset
+from .viewsets import (
+    get_change_viewset, get_snapshot_viewset, get_change_attachment_viewset)
 
 
 def _get_viewset_name(viewset):
@@ -20,6 +21,14 @@ class DocumentedRouter(DefaultRouter):
             if snapshot_viewset:
                 name = _get_viewset_name(snapshot_viewset)  # noqa: protected-access
                 super().register(f'{name}-list', snapshot_viewset, name)
+
+            change_attachment_viewset = get_change_attachment_viewset(
+                change_viewset)
+            if change_attachment_viewset:
+                name = _get_viewset_name(change_attachment_viewset)  # noqa: protected-access
+                super().register(
+                    f'{name}-list', change_attachment_viewset, name)
+
 
     def register(self, prefix, viewset, basename=None, base_name=None):
         if getattr(viewset, 'allow_changes', True):
