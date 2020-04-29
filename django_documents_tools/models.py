@@ -218,6 +218,7 @@ class Changes:
         'bases': (BaseChangeAttachment,),
         'base_viewset': None,
         'base_serializer': None,
+        'filterset': None,
         'model_name': None,
         'table_name': None,
         'verbose_name': None,
@@ -232,6 +233,7 @@ class Changes:
         'bases': (BaseChange,),
         'base_viewset': None,
         'base_serializer': None,
+        'filterset': None,
         'manager_name': 'changes',
         'model_name': None,
         'table_name': None,
@@ -245,6 +247,7 @@ class Changes:
         'bases': (BaseSnapshot,),
         'base_serializer': None,
         'base_viewset': None,
+        'filterset': None,
         'unit_size_in_days': None,
         'manager_name': 'snapshots',
         'model_name': None,
@@ -343,6 +346,7 @@ class Changes:
             '__module__': self.get_module(model, inherited),
             '_documented_excluded_fields': self.excluded_fields,
             '_base_viewset': self.change_opts['base_viewset'],
+            '_filterset': self.change_opts['filterset'],
             '_base_serializer': self.change_opts['base_serializer'],
         }
         opts = model._meta   # noqa protected-access
@@ -399,6 +403,7 @@ class Changes:
             '__module__': self.get_module(model, inherited),
             '_base_viewset': self.change_attachment_opts['base_viewset'],
             '_base_serializer': self.change_attachment_opts['base_serializer'],
+            '_filterset': self.change_attachment_opts['filterset'],
         }
         attrs['permitted_fields'] = {
             '{app_label}.change_{model_name}': ('file',)
@@ -428,6 +433,7 @@ class Changes:
             'unit_size_in_days': self.snapshot_opts['unit_size_in_days'],
             '_base_viewset': self.snapshot_opts['base_viewset'],
             '_base_serializer': self.snapshot_opts['base_serializer'],
+            '_filterset': self.snapshot_opts['filterset'],
         }
 
         src_fields = self.get_fields(model)
