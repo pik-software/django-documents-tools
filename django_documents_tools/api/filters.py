@@ -1,4 +1,5 @@
 from django.contrib.postgres.fields import ArrayField
+from django.utils.module_loading import import_string
 from rest_framework.fields import DateTimeField
 from rest_framework_filters import (
     FilterSet, RelatedFilter, IsoDateTimeFilter, BaseCSVFilter, AutoFilter,
@@ -121,6 +122,9 @@ def get_documented_model_filter(model):
 
 
 def get_change_filter(model, orig_viewset):
+    if model._filterset:  # noqa: protected-access
+        return import_string(model._filterset)  # noqa: protected-access
+
     documented_model = orig_viewset.serializer_class.Meta.model
     documented_field = model._documented_model_field  # noqa: protected-access
     documented_filter = RelatedFilter(
@@ -137,6 +141,9 @@ def get_change_filter(model, orig_viewset):
 
 
 def get_snapshot_filter(model, change_viewset):
+    if model._filterset:  # noqa: protected-access
+        return import_string(model._filterset)  # noqa: protected-access
+
     change_model = change_viewset.serializer_class.Meta.model
     snapshot_model = change_model._meta.get_field('snapshot').related_model  # noqa: protected-access
     documented_model = getattr(
@@ -159,6 +166,9 @@ def get_snapshot_filter(model, change_viewset):
 
 
 def get_change_attachment_filter(model, change_filter):
+    if model._filterset:  # noqa: protected-access
+        return import_string(model._filterset)  # noqa: protected-access
+
     meta = type('Meta', (BaseChangeAttachmentFilter.Meta,), {'model': model})
     pk_field_name = model._meta.pk.name  # noqa: protected-access
     change_model = change_filter.Meta.model
