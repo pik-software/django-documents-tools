@@ -22,7 +22,7 @@ class ArrayFilter(BaseCSVFilter, AutoFilter):
         super().__init__(*args, **kwargs)
 
 
-class ChangeFilterBase(FilterSet):
+class BaseChangeFilter(FilterSet):
     updated = AutoFilter(lookups=DATE_LOOKUPS)
     document_date = AutoFilter(lookups=DATE_LOOKUPS)
     document_name = AutoFilter(lookups=STRING_LOOKUPS)
@@ -50,7 +50,7 @@ class ChangeFilterBase(FilterSet):
             ArrayField: {'filter_class': ArrayFilter}}
 
 
-class SnapshotFilterBase(FilterSet):
+class BaseSnapshotFilter(FilterSet):
     updated = AutoFilter(lookups=DATE_LOOKUPS)
     history_date = AutoFilter(lookups=DATE_LOOKUPS)
     is_deleted = BooleanFilter(
@@ -125,7 +125,7 @@ def get_change_filter(model, orig_viewset):
     documented_field = model._documented_model_field  # noqa: protected-access
     documented_filter = RelatedFilter(
         orig_viewset.filter_class, queryset=documented_model.objects.all())
-    meta = type(f'Meta', (ChangeFilterBase.Meta,), {'model': model})
+    meta = type(f'Meta', (BaseChangeFilter.Meta,), {'model': model})
     pk_field_name = model._meta.pk.name  # noqa: protected-access
     attrs = {
         documented_field: documented_filter,
@@ -133,7 +133,7 @@ def get_change_filter(model, orig_viewset):
         pk_field_name: AutoFilter(lookups=UID_LOOKUPS)
     }
     name = f'{model._meta.object_name}Filter'  # noqa: protected-access
-    return type(name, (ChangeFilterBase,), attrs)
+    return type(name, (BaseChangeFilter,), attrs)
 
 
 def get_snapshot_filter(model, change_viewset):
@@ -148,14 +148,14 @@ def get_snapshot_filter(model, change_viewset):
         get_documented_model_filter(documented_model),
         queryset=documented_model.objects.all())
 
-    meta = type(f'Meta', (SnapshotFilterBase.Meta, ), {'model': model})
+    meta = type(f'Meta', (BaseSnapshotFilter.Meta,), {'model': model})
     attrs = {
         documented_field: documented_filter,
         'Meta': meta,
         pk_field_name: AutoFilter(lookups=UID_LOOKUPS)
     }
     name = f'{model._meta.object_name}Filter'  # noqa: protected-access
-    return type(name, (SnapshotFilterBase, ), attrs)
+    return type(name, (BaseSnapshotFilter,), attrs)
 
 
 def get_change_attachment_filter(model, change_filter):
