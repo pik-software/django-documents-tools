@@ -16,7 +16,6 @@ from .manager import ChangeDescriptor, SnapshotDescriptor
 from .exceptions import (
     BusinessEntityCreationIsNotAllowedError, ChangesAreNotCreatedYetError)
 from .settings import tools_settings as t_settings
-from .signals import change_applied
 from .utils import get_change_attachment_file_path
 
 
@@ -134,14 +133,9 @@ class BaseChange(Dated):
                 raise BusinessEntityCreationIsNotAllowedError()
 
             applicable_date = timezone.now().date()
-            _, updated_fields = new_documented.changes.apply_to_object(
-                date=applicable_date)
-
+            new_documented.changes.apply_to_object(date=applicable_date)
             new_documented.save()
             self.refresh_from_db()
-            change_applied.send(
-                sender=self.__class__, documented_instance=new_documented,
-                change=self, updated_fields=updated_fields)
 
 
 class BaseChangeAttachment(Dated):
