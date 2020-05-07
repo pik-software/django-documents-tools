@@ -11,7 +11,7 @@ from django.utils import timezone
 from .exceptions import (
     ObservableInstanceRequiredError,
     SnapshotDuplicateExistsError, ChangesAreNotCreatedYetError)
-
+from .signals import change_applied
 
 LOGGER = logging.getLogger(__name__)
 
@@ -315,11 +315,16 @@ class ChangeManager(models.Manager):
             snapshots_qs=snapshots_qs, allowed_latest_date=date)
 
         snapshot = snapshots_slicer.latest_snapshot
-        changed = {}
 
         if snapshot:
             changed = setattrs(self.instance, **snapshot.state)
-        return self.instance, changed
+            change = snapshot.changes.first()
+            change_applied.send(
+                sender=self.instance.changes.model,
+                documented_instance=self.instance,
+                change=change, updated_fields=changed)
+
+        return self.instance
 
     def get_queryset(self):
         queryset = super().get_queryset()
