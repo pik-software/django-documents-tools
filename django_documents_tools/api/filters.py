@@ -1,7 +1,9 @@
 from django.contrib.postgres.fields import ArrayField
+from django.utils.module_loading import import_string
 from rest_framework.fields import DateTimeField
 from rest_framework_filters import (
-    FilterSet, RelatedFilter, IsoDateTimeFilter, BaseCSVFilter, AutoFilter)
+    FilterSet, RelatedFilter, IsoDateTimeFilter, BaseCSVFilter, AutoFilter,
+    BooleanFilter)
 
 
 UID_LOOKUPS = ('exact', 'gt', 'gte', 'lt', 'lte', 'in', 'isnull')
@@ -21,14 +23,25 @@ class ArrayFilter(BaseCSVFilter, AutoFilter):
         super().__init__(*args, **kwargs)
 
 
-class ChangeFilterBase(FilterSet):
-    uid = AutoFilter(lookups=UID_LOOKUPS)
+class BaseChangeFilter(FilterSet):
     updated = AutoFilter(lookups=DATE_LOOKUPS)
     document_date = AutoFilter(lookups=DATE_LOOKUPS)
     document_name = AutoFilter(lookups=STRING_LOOKUPS)
     document_link = AutoFilter(lookups=STRING_LOOKUPS)
     document_is_draft = AutoFilter(lookups=BOOLEAN_LOOKUPS)
     document_fields = ArrayFilter()
+    is_deleted = BooleanFilter(
+        field_name='deleted', method='filter_is_deleted')
+
+    @staticmethod
+    def filter_is_deleted(queryset, name, value):
+        if value is True:
+            return queryset.filter(deleted__isnull=False)
+
+        if value is False:
+            return queryset.filter(deleted__isnull=True)
+
+        return queryset
 
     class Meta:
         model = None
@@ -38,10 +51,21 @@ class ChangeFilterBase(FilterSet):
             ArrayField: {'filter_class': ArrayFilter}}
 
 
-class SnapshotFilterBase(FilterSet):
-    uid = AutoFilter(lookups=UID_LOOKUPS)
+class BaseSnapshotFilter(FilterSet):
     updated = AutoFilter(lookups=DATE_LOOKUPS)
     history_date = AutoFilter(lookups=DATE_LOOKUPS)
+    is_deleted = BooleanFilter(
+        field_name='deleted', method='filter_is_deleted')
+
+    @staticmethod
+    def filter_is_deleted(queryset, name, value):
+        if value is True:
+            return queryset.filter(deleted__isnull=False)
+
+        if value is False:
+            return queryset.filter(deleted__isnull=True)
+
+        return queryset
 
     class Meta:
         model = None
@@ -54,40 +78,105 @@ class SnapshotFilterBase(FilterSet):
 class DocumentedModelFilterBase(FilterSet):
     class Meta:
         model = None
-        fields = {'uid': ['exact', 'in']}
+        fields = {}
+        filter_overrides = {
+            DateTimeField: {'filter_class': IsoDateTimeFilter},
+            ArrayField: {'filter_class': ArrayFilter}}
+
+
+class BaseChangeAttachmentFilter(FilterSet):
+    updated = AutoFilter(lookups=DATE_LOOKUPS)
+    created = AutoFilter(lookups=DATE_LOOKUPS)
+    deleted = AutoFilter(lookups=DATE_LOOKUPS)
+    is_deleted = BooleanFilter(
+        field_name='deleted', method='filter_is_deleted')
+
+    @staticmethod
+    def filter_is_deleted(queryset, name, value):
+        if value is True:
+            return queryset.filter(deleted__isnull=False)
+
+        if value is False:
+            return queryset.filter(deleted__isnull=True)
+
+        return queryset
+
+    class Meta:
+        model = None
+        fields = {}
+        filter_overrides = {
+            DateTimeField: {'filter_class': IsoDateTimeFilter},
+            ArrayField: {'filter_class': ArrayFilter}
+        }
 
 
 def get_documented_model_filter(model):
     meta = type(f'Meta', (DocumentedModelFilterBase.Meta,), {'model': model})
-    attrs = {'Meta': meta}
+    pk_field_name = model._meta.pk.name  # noqa: protected-access
+    attrs = {
+        'Meta': meta,
+        pk_field_name: AutoFilter(lookups=UID_LOOKUPS)
+    }
     name = f'LinkTo{model._meta.object_name}Filter'  # noqa: protected-access
     return type(name, (DocumentedModelFilterBase,), attrs)
 
 
 def get_change_filter(model, orig_viewset):
+    if model._filterset:  # noqa: protected-access
+        return import_string(model._filterset)  # noqa: protected-access
+
     documented_model = orig_viewset.serializer_class.Meta.model
     documented_field = model._documented_model_field  # noqa: protected-access
     documented_filter = RelatedFilter(
         orig_viewset.filter_class, queryset=documented_model.objects.all())
-    meta = type(f'Meta', (ChangeFilterBase.Meta,), {'model': model})
-
-    attrs = {documented_field: documented_filter, 'Meta': meta}
+    meta = type(f'Meta', (BaseChangeFilter.Meta,), {'model': model})
+    pk_field_name = model._meta.pk.name  # noqa: protected-access
+    attrs = {
+        documented_field: documented_filter,
+        'Meta': meta,
+        pk_field_name: AutoFilter(lookups=UID_LOOKUPS)
+    }
     name = f'{model._meta.object_name}Filter'  # noqa: protected-access
-    return type(name, (ChangeFilterBase,), attrs)
+    return type(name, (BaseChangeFilter,), attrs)
 
 
 def get_snapshot_filter(model, change_viewset):
+    if model._filterset:  # noqa: protected-access
+        return import_string(model._filterset)  # noqa: protected-access
+
     change_model = change_viewset.serializer_class.Meta.model
     snapshot_model = change_model._meta.get_field('snapshot').related_model  # noqa: protected-access
     documented_model = getattr(
         snapshot_model,
         change_model._documented_model_field).field.related_model  # noqa: protected-access
+    pk_field_name = snapshot_model._meta.pk.name  # noqa: protected-access
     documented_field = documented_model._meta.model_name  # noqa: protected-access
     documented_filter = RelatedFilter(
         get_documented_model_filter(documented_model),
         queryset=documented_model.objects.all())
 
-    meta = type(f'Meta', (SnapshotFilterBase.Meta, ), {'model': model})
-    attrs = {f'{documented_field}': documented_filter, 'Meta': meta}
+    meta = type(f'Meta', (BaseSnapshotFilter.Meta,), {'model': model})
+    attrs = {
+        documented_field: documented_filter,
+        'Meta': meta,
+        pk_field_name: AutoFilter(lookups=UID_LOOKUPS)
+    }
     name = f'{model._meta.object_name}Filter'  # noqa: protected-access
-    return type(name, (SnapshotFilterBase, ), attrs)
+    return type(name, (BaseSnapshotFilter,), attrs)
+
+
+def get_change_attachment_filter(model, change_filter):
+    if model._filterset:  # noqa: protected-access
+        return import_string(model._filterset)  # noqa: protected-access
+
+    meta = type('Meta', (BaseChangeAttachmentFilter.Meta,), {'model': model})
+    pk_field_name = model._meta.pk.name  # noqa: protected-access
+    change_model = change_filter.Meta.model
+    attrs = {
+        'Meta': meta,
+        'change': RelatedFilter(
+            change_filter, queryset=change_model.objects.all()),
+        pk_field_name: AutoFilter(lookups=UID_LOOKUPS)
+    }
+    name = f'{model._meta.object_name}Filter'  # noqa: protected-access
+    return type(name, (BaseChangeAttachmentFilter, ), attrs)

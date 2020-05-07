@@ -1,18 +1,35 @@
+from uuid import uuid4
+
 from django.db import models
 
 from django_documents_tools.models import (
     BaseDocumented, Changes, BaseChange, BaseSnapshot)
 
 
+class BaseChangeModel(BaseChange):
+    uid = models.UUIDField(default=uuid4, primary_key=True)
+
+    class Meta:
+        abstract = True
+
+
+class BaseBaseSnapshotModel(BaseSnapshot):
+    uid = models.UUIDField(default=uuid4, primary_key=True)
+
+    class Meta:
+        abstract = True
+
+
 class Documented(BaseDocumented):
+    uid = models.UUIDField(default=uuid4, primary_key=True)
 
     changes = Changes(
         inherit=True,
-        excluded_fields=('deleted',),
+        excluded_fields=('deleted', 'created', 'updated'),
         change_opts={
-            'bases': (BaseChange,)},
+            'bases': (BaseChangeModel,)},
         snapshot_opts={
-            'bases': (BaseSnapshot,),
+            'bases': (BaseBaseSnapshotModel,),
             'unit_size_in_days': 1})
 
     class Meta:
@@ -21,6 +38,7 @@ class Documented(BaseDocumented):
 
 class Address(models.Model):
 
+    uid = models.UUIDField(default=uuid4, primary_key=True)
     country = models.CharField(max_length=128)
     city = models.CharField(max_length=128)
     street = models.CharField(max_length=256)
@@ -33,6 +51,7 @@ class Address(models.Model):
 
 class Author(models.Model):
 
+    uid = models.UUIDField(default=uuid4, primary_key=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     date_of_birth = models.DateField(null=True, blank=True)
@@ -48,6 +67,7 @@ class Author(models.Model):
 
 class Book(Documented):
 
+    uid = models.UUIDField(default=uuid4, primary_key=True)
     title = models.CharField(max_length=200)
     author = models.ForeignKey('Author', on_delete=models.SET_NULL, null=True)
     summary = models.TextField(max_length=1000, blank=True)

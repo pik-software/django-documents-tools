@@ -77,11 +77,11 @@ class ChangeDescriptor:
 
 
 def setattrs(obj, **attrs):
-    changed = []
+    changed = {}
     for attr, new_value in attrs.items():
         old_value = getattr(obj, attr)
         if old_value != new_value:
-            changed.append(attr)
+            changed[attr] = old_value
             setattr(obj, attr, new_value)
     return changed
 
@@ -315,9 +315,11 @@ class ChangeManager(models.Manager):
             snapshots_qs=snapshots_qs, allowed_latest_date=date)
 
         snapshot = snapshots_slicer.latest_snapshot
+        changed = {}
+
         if snapshot:
-            setattrs(self.instance, **snapshot.state)
-        return self.instance
+            changed = setattrs(self.instance, **snapshot.state)
+        return self.instance, changed
 
     def get_queryset(self):
         queryset = super().get_queryset()
