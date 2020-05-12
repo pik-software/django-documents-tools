@@ -358,3 +358,32 @@ def test_create_change_attachment(
         attachment=book_change_attachment)
 
     assert book_change.attachment == book_change_attachment
+
+
+class TestGetDocumentedFields:
+
+    @staticmethod
+    def test_ignore_invalid(book_change_model):
+        book_change = book_change_model(
+            document_is_draft=False, document_date=timezone.now(),
+            document_fields=['title', 'author', 'bar'], title='bar')
+
+        assert book_change.get_documented_fields() == ['title', 'author']
+
+
+@pytest.mark.django_db
+class TestDocumentFieldsFromChanges:
+
+    @staticmethod
+    def test_ignore_invalid(book_change_model, book_snapshot_model):
+        book = Book.objects.create(title='foo', author=_create_author())
+        book_change_model.objects.create(
+            book=book, document_is_draft=False, document_date=timezone.now(),
+            document_fields=['title', 'author'], title='bar')
+        book_change_model.objects.create(
+            book=book, document_is_draft=False, document_date=timezone.now(),
+            document_fields=['title', 'bar'], title='bar')
+
+        book_snapshot = book_snapshot_model.objects.first()
+        assert book_snapshot.document_fields_from_changes == {
+            'title', 'author'}
