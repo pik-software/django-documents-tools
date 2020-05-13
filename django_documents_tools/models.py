@@ -16,7 +16,7 @@ from .manager import ChangeDescriptor, SnapshotDescriptor
 from .exceptions import (
     BusinessEntityCreationIsNotAllowedError, ChangesAreNotCreatedYetError)
 from .settings import tools_settings as t_settings
-from .utils import get_change_attachment_file_path
+from .utils import get_change_attachment_file_path, LimitedChoicesValidator
 
 
 LOGGER = logging.getLogger(__name__)
@@ -85,8 +85,7 @@ class BaseChange(Dated):
     document_link = models.URLField(
         _('Ссылка на документ'), default='', blank=True)
     document_is_draft = models.BooleanField(_('Черновик'), default=True)
-    document_fields = ArrayField(
-        models.CharField(_('Атрибуты'), max_length=255), default=list)
+    document_fields = None
 
     def __str__(self):
         return f'{self.pk} - {self.document_name}'
@@ -374,6 +373,9 @@ class Changes:
             self.change_attachment_model, on_delete=models.SET_NULL,
             related_name='change', null=True, blank=True,
             verbose_name=attachment_title)  # noqa: protected-access
+        attrs['document_fields'] = ArrayField(
+            models.CharField(_('Атрибуты'), max_length=255), default=list,
+            validators=[LimitedChoicesValidator(documented_fields)])
         base_meta = {
             'ordering': ('-document_date',),
             'get_latest_by': 'document_date'}
