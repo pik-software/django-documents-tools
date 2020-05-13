@@ -1,4 +1,8 @@
 import os
+from collections import Counter
+
+from django.core.exceptions import ValidationError
+from django.utils.deconstruct import deconstructible
 
 from django_documents_tools.manager import setattrs
 from django_documents_tools.settings import tools_settings
@@ -36,3 +40,21 @@ def validate_change_attrs(model, attrs):
     elif tools_settings.CREATE_BUSINESS_ENTITY_AFTER_CHANGE_CREATED:
         new_documented = documented_model(**kwargs)
         new_documented.full_clean()
+
+
+@deconstructible
+class LimitedChoicesValidator:
+
+    def __init__(self, allowed_fields):
+        self.allowed_fields = allowed_fields
+
+    def __call__(self, value):
+        for field in value:
+            if field not in self.allowed_fields:
+                raise ValidationError(f'Unknown field `{field}`.')
+
+        for field, count in Counter(value).most_common():
+            if count > 1:
+                raise ValidationError(f'Found duplicate field `{field}`.')
+
+        return True

@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import pytest
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.test import override_settings
 from django_documents_tools.exceptions import (
@@ -360,17 +361,6 @@ def test_create_change_attachment(
     assert book_change.attachment == book_change_attachment
 
 
-class TestGetDocumentedFields:
-
-    @staticmethod
-    def test_ignore_invalid(book_change_model):
-        book_change = book_change_model(
-            document_is_draft=False, document_date=timezone.now(),
-            document_fields=['title', 'author', 'bar'], title='bar')
-
-        assert book_change.get_documented_fields() == ['title', 'author']
-
-
 @pytest.mark.django_db
 class TestDocumentFieldsFromChanges:
 
@@ -387,3 +377,69 @@ class TestDocumentFieldsFromChanges:
         book_snapshot = book_snapshot_model.objects.first()
         assert book_snapshot.document_fields_from_changes == {
             'title', 'author'}
+
+
+@pytest.mark.django_db
+class TestValidateDocumentedFields:
+
+    @staticmethod
+    def test_empty(book_change_model):
+        book_change = book_change_model(
+            document_is_draft=False, document_date=timezone.now(),
+            document_fields=[], document_name='test')
+
+        with pytest.raises(ValidationError) as exc_info:
+            book_change.full_clean()
+
+        assert str(exc_info.value.args[0]) == (
+            "{'document_fields': [ValidationError(['This field cannot "
+            "be blank.'])]}")
+
+    @staticmethod
+    def test_none(book_change_model):
+        book_change = book_change_model(
+            document_is_draft=False, document_date=timezone.now(),
+            document_fields=None, document_name='test')
+
+        with pytest.raises(ValidationError) as exc_info:
+            book_change.full_clean()
+
+        assert str(exc_info.value.args[0]) == (
+            "{'document_fields': [ValidationError(['This field cannot "
+            "be null.'])]}")
+
+    @staticmethod
+    def test_duplicated(book_change_model):
+        book_change = book_change_model(
+            document_is_draft=False, document_date=timezone.now(),
+            document_fields=['title', 'author', 'title'], document_name='test')
+
+        with pytest.raises(ValidationError) as exc_info:
+            book_change.full_clean()
+
+        assert str(exc_info.value.args[0]) == (
+            "{'document_fields': [ValidationError(['Found duplicate field "
+            "`title`.'])]}")
+
+    @staticmethod
+    def test_unknown(book_change_model):
+        book_change = book_change_model(
+            document_is_draft=False, document_date=timezone.now(),
+            document_fields=['title', 'author', 'foo'], document_name='test')
+
+        with pytest.raises(ValidationError) as exc_info:
+            book_change.full_clean()
+
+        assert str(exc_info.value.args[0]) == (
+            "{'document_fields': [ValidationError(['Unknown field `foo`.'])]}")
+
+
+class TestGetDocumentedFields:
+
+    @staticmethod
+    def test_ignore_invalid(book_change_model):
+        book_change = book_change_model(
+            document_is_draft=False, document_date=timezone.now(),
+            document_fields=['title', 'author', 'bar'], title='bar')
+
+        assert book_change.get_documented_fields() == ['title', 'author']
