@@ -1,5 +1,6 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 
+import freezegun
 import pytest
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -443,3 +444,30 @@ class TestGetDocumentedFields:
             document_fields=['title', 'author', 'bar'], title='bar')
 
         assert book_change.get_documented_fields() == ['title', 'author']
+
+
+@freezegun.freeze_time(datetime(2020, 5, 12, 13, 34))
+@pytest.mark.django_db
+class TestChangeDocumentDate:
+
+    @staticmethod
+    @pytest.mark.parametrize('new_document_date', [
+        datetime(2020, 5, 3, 12), datetime(2020, 5, 7, 17)
+    ])
+    def test_change_document_date(book_change_model, new_document_date):
+        book = Book.objects.create(title='foo', author=_create_author())
+        book_change = book_change_model.objects.create(
+            book=book, document_is_draft=False,
+            document_date=datetime(2020, 5, 5, 17),
+            document_fields=['title'],
+            title='bar')
+
+        book.refresh_from_db()
+        assert book.title == 'bar'
+
+        book_change.document_date = new_document_date
+
+        book_change.save()
+        book.refresh_from_db()
+
+        assert book.title == 'bar'
