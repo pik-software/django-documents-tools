@@ -100,10 +100,17 @@ class BaseChange(Dated):
     class Meta:
         abstract = True
 
+    def get_documented_fields(self):
+        return [
+            field for field in self.document_fields
+            if field in self._all_documented_fields
+        ]
+
     def get_snapshot_changes(self):
-        return {field: getattr(self, field)
-                for field in self.document_fields
-                if field in self._all_documented_fields}
+        return {
+            field: getattr(self, field)
+            for field in self.get_documented_fields()
+        }
 
     def get_changes(self):
         return self.get_snapshot_changes()
@@ -192,9 +199,10 @@ class BaseSnapshot(Dated):
     @property
     def document_fields_from_changes(self):
         result = set()
-        doc_fields = self.changes.values_list('document_fields', flat=True)
-        for fields in doc_fields.all():
-            result.update(fields)
+
+        for change in self.changes.all():
+            result.update(change.get_documented_fields())
+
         return result
 
     def is_empty(self):
