@@ -2,8 +2,11 @@ import os
 from collections import Counter
 
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from django.utils.deconstruct import deconstructible
 
+from django_documents_tools.exceptions import (
+    BusinessEntityCreationIsNotAllowedError)
 from django_documents_tools.manager import setattrs
 from django_documents_tools.settings import tools_settings
 
@@ -58,3 +61,23 @@ class LimitedChoicesValidator:
                 raise ValidationError(f'Found duplicate field `{field}`.')
 
         return True
+
+
+def apply_change_receiver(sender, **kwargs):
+    change = kwargs['instance']
+
+    if not change.document_is_draft:
+        new_documented = getattr(change, change._documented_model_field)  # noqa: pylint==protected-access
+        creation = tools_settings.CREATE_BUSINESS_ENTITY_AFTER_CHANGE_CREATED
+        if new_documented is None and creation:
+            new_documented = change.apply_new()
+            setattr(change, change._documented_model_field, new_documented)  # noqa: pylint==protected-access
+            change.save(update_fields=[change._documented_model_field])  # noqa: pylint==protected-access
+
+        elif new_documented is None and not creation:
+            raise BusinessEntityCreationIsNotAllowedError()
+
+        applicable_date = timezone.now().date()
+        new_documented.changes.apply_to_object(date=applicable_date)
+        new_documented.save(apply_documents=False)
+        change.refresh_from_db()

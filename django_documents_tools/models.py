@@ -7,16 +7,16 @@ from django.apps import apps
 from django.utils import timezone
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
-from django.db.models.signals import class_prepared
+from django.db.models.signals import class_prepared, post_save
 from django.utils.translation import ugettext, ugettext_lazy as _
 from model_utils import FieldTracker
 
 from .fields import FIELDS_PROCESSORS
 from .manager import ChangeDescriptor, SnapshotDescriptor
-from .exceptions import (
-    BusinessEntityCreationIsNotAllowedError, ChangesAreNotCreatedYetError)
-from .settings import tools_settings as t_settings
-from .utils import get_change_attachment_file_path, LimitedChoicesValidator
+from .exceptions import ChangesAreNotCreatedYetError
+from .utils import (
+    get_change_attachment_file_path, LimitedChoicesValidator,
+    apply_change_receiver)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -122,26 +122,6 @@ class BaseChange(Dated):
         new_documented = documented_model(**kwargs)
         new_documented.save(apply_documents=False)
         return new_documented
-
-    def save(self, force_insert=False, force_update=False, using=None,
-             update_fields=None):
-        super().save(force_insert, force_update, using, update_fields)
-
-        if not self.document_is_draft:
-            new_documented = getattr(self, self._documented_model_field)
-            creation = t_settings.CREATE_BUSINESS_ENTITY_AFTER_CHANGE_CREATED
-            if new_documented is None and creation:
-                new_documented = self.apply_new()
-                setattr(self, self._documented_model_field, new_documented)
-                super().save(update_fields=[self._documented_model_field])
-
-            elif new_documented is None and not creation:
-                raise BusinessEntityCreationIsNotAllowedError()
-
-            applicable_date = timezone.now().date()
-            new_documented.changes.apply_to_object(date=applicable_date)
-            new_documented.save(apply_documents=False)
-            self.refresh_from_db()
 
 
 class BaseChangeAttachment(Dated):
@@ -330,6 +310,8 @@ class Changes:
         setattr(
             module, self.change_attachment_model.__name__,
             self.change_attachment_model)
+
+        post_save.connect(apply_change_receiver, sender=self.change_model)
 
     def create_change_model(self, model, inherited):
         """
