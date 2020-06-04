@@ -123,6 +123,12 @@ class BaseChange(Dated):
         new_documented.save(apply_documents=False)
         return new_documented
 
+    def save(self, *args, **kwargs):  # noqa: pylint==arguments-differ
+        super().save(*args, **kwargs)
+
+        # We are using `post_save` signal for document processing.
+        # See `finalize` method in `Changes` for more info.
+
 
 class BaseChangeAttachment(Dated):
     _help_text = _(
