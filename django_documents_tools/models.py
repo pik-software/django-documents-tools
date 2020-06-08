@@ -140,7 +140,7 @@ class BaseChange(Dated):
 
             applicable_date = timezone.now().date()
             new_documented.changes.apply_to_object(date=applicable_date)
-            new_documented.save()
+            new_documented.save(apply_documents=False)
             self.refresh_from_db()
 
 
@@ -204,13 +204,6 @@ class BaseSnapshot(Dated):
             result.update(change.get_documented_fields())
 
         return result
-
-    def is_empty(self):
-        return not self.state
-
-    def clear_attrs(self):
-        for field_name in self.state:
-            setattr(self, field_name, None)
 
 
 class Changes:

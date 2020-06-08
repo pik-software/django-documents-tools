@@ -108,7 +108,6 @@ class SnapshotCalculator:
         snapshot = self._snapshots_qs.first()
         if snapshot and not changes:
             snapshot.deleted = timezone.now()
-            snapshot.clear_attrs()
             snapshot.save()
             return snapshot
 
@@ -264,7 +263,7 @@ class SnapshotsSlicer:
                     changes_qs=changes_qs,
                     rel_to_documented_obj=self._rel_to_documented_obj)
                 snapshot = snapshot_calculator.calculate_snapshot()
-                if snapshot and not snapshot.is_empty():
+                if snapshot and not snapshot.deleted:
                     self._snapshots.append(snapshot)
             else:
                 snapshot = snapshots_qs.filter(deleted__isnull=True).first()
