@@ -18,7 +18,7 @@ setup(
     name='django-documents-tools',
     author='pik-software',
     author_email='no-reply@pik-software.ru',
-    version='0.3.5',
+    version='0.3.6',
     license='BSD-3-Clause',
     url='https://github.com/pik-software/documents-tools',
     install_requires=REQUIREMENTS,
