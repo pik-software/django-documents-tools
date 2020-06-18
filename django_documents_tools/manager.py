@@ -122,7 +122,9 @@ class SnapshotCalculator:
 
     def _get_initial_snapshot_state(self):
         query_set = (self._snapshots_qs.model.objects.filter(
-            history_date__lt=self.history_date, **self._rel_to_documented_obj)
+            history_date__lt=self.history_date,
+            deleted__isnull=True,
+            **self._rel_to_documented_obj)
             .order_by('history_date'))
         snapshot = query_set.last()
         if snapshot:
