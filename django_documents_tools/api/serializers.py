@@ -16,7 +16,7 @@ class BaseChangeSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         # Ensure that new documented obj will be in correct state.
         validated_attrs = super().validate(attrs)
-        validate_change_attrs(self.Meta.model, validated_attrs)
+        validate_change_attrs(self.Meta.model, self.instance, validated_attrs)
         return validated_attrs
 
     class Meta:

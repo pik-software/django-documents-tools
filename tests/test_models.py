@@ -28,6 +28,12 @@ def _create_author(first_name='first_name', last_name='last_name'):
     return author
 
 
+def _create_book():
+    book = Book(title='title', author=_create_author())
+    book.save()
+    return book
+
+
 def _create_book_change(
         document_date=None, document_fields=None, document_is_draft=True,
         title='title', book=None, author=None):

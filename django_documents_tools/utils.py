@@ -23,26 +23,33 @@ def check_subclass(base, original):
             f'{base.__name__} must be subclass of {original.__name__}')
 
 
-def validate_change_attrs(model, attrs):
+def validate_change_attrs(model, change, attrs):
     documented_model_field = model._documented_model_field  # noqa: protected-access
     documented_model = model._meta.get_field(  # noqa: protected-access
         documented_model_field).remote_field.model
-    change = model(**attrs)
-    kwargs = change.get_changes()
 
-    if documented_model_field in attrs:
-        documented_instance = attrs[documented_model_field]
-        snapshot = documented_instance.snapshots.filter(
-            history_date__gte=attrs['document_date']).first()
-
-        if snapshot:
-            kwargs = {**snapshot.state, **kwargs}
+    if change and getattr(change, documented_model_field):
+        documented_instance = getattr(change, documented_model_field)
+        kwargs = change.get_changes()
+        if change.snapshot:
+            changes = {}
+            for field_name in attrs['document_fields']:
+                if field_name in attrs.keys():
+                    changes[field_name] = attrs[field_name]
+            kwargs = {**change.snapshot.state, **changes}
 
         setattrs(documented_instance, **kwargs)
         documented_instance.full_clean()
-    elif tools_settings.CREATE_BUSINESS_ENTITY_AFTER_CHANGE_CREATED:
-        new_documented = documented_model(**kwargs)
-        new_documented.full_clean()
+    else:
+        change = model(**attrs)
+        documented_instance = getattr(change, documented_model_field)
+        kwargs = change.get_changes()
+        if documented_instance:
+            setattrs(documented_instance, **kwargs)
+            documented_instance.full_clean()
+        elif tools_settings.CREATE_BUSINESS_ENTITY_AFTER_CHANGE_CREATED:
+            new_documented = documented_model(**kwargs)
+            new_documented.full_clean()
 
 
 @deconstructible
