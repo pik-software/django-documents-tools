@@ -34,7 +34,8 @@ def validate_change_attrs(model, change, attrs):
         if change.snapshot:
             changes = {}
             for field_name in attrs['document_fields']:
-                if field_name in attrs.keys():
+                if (field_name in attrs.keys() and
+                        field_name in change._all_documented_fields):  # noqa: protected-access
                     changes[field_name] = attrs[field_name]
             kwargs = {**change.snapshot.state, **changes}
 
