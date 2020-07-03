@@ -1,15 +1,48 @@
+from typing import Optional, Union
+from uuid import UUID
+
 from rest_framework import serializers
 from django.db import models
 from django.utils.module_loading import import_string
 
 from django_documents_tools.utils import check_subclass, validate_change_attrs
+from .permitted import PermittedFieldsSerializerMixIn
 from ..settings import tools_settings
 
 
 NON_REQUIRED_KWARGS = {'required': False, 'allow_null': True}
 
 
-class BaseChangeSerializer(serializers.ModelSerializer):
+class StandardizedProtocolSerializer(serializers.ModelSerializer):
+    _uid = serializers.SerializerMethodField()
+    _type = serializers.SerializerMethodField()
+    _version = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get__uid(obj) -> Optional[Union[UUID, str]]:
+        if not hasattr(obj, 'uid'):
+            if not hasattr(obj, 'pk'):
+                return None
+            return str(obj.pk)
+        return obj.uid
+
+    @staticmethod
+    def get__type(obj) -> Optional[str]:
+        return obj._meta.model_name  # noqa: protected-access
+
+    @staticmethod
+    def get__version(obj) -> Optional[int]:
+        if not hasattr(obj, 'version'):
+            return None
+        return obj.version
+
+
+class StandardizedModelSerializer(
+        PermittedFieldsSerializerMixIn, StandardizedProtocolSerializer):
+    pass
+
+
+class BaseChangeSerializer(StandardizedModelSerializer):
     document_link = serializers.URLField(default='', allow_blank=True)
     document_fields = serializers.ListField(allow_empty=False, required=True)
 
@@ -22,12 +55,12 @@ class BaseChangeSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (
-            '_uid', '_type', '_version', 'created', 'updated', 'document_name',
-            'document_date', 'document_link', 'document_is_draft',
-            'document_fields', 'attachment')
+            '_uid', '_type', '_version', 'created', 'updated', 'deleted',
+            'document_name', 'document_date', 'document_link',
+            'document_is_draft', 'document_fields', 'attachment')
 
 
-class BaseSnapshotSerializer(serializers.ModelSerializer):
+class BaseSnapshotSerializer(StandardizedModelSerializer):
     class Meta:
         model = None
         fields = (
@@ -35,19 +68,19 @@ class BaseSnapshotSerializer(serializers.ModelSerializer):
             'document_fields', 'history_date')
 
 
-class BaseDocumentedModelLinkSerializer(serializers.ModelSerializer):
+class BaseDocumentedModelLinkSerializer(StandardizedModelSerializer):
     class Meta:
         model = None
         fields = ('_uid', '_type', '_version', 'created', 'updated')
 
 
-class BaseChangeAttachmentLinkSerializer(serializers.ModelSerializer):
+class BaseChangeAttachmentLinkSerializer(StandardizedModelSerializer):
     class Meta:
         model = None
         fields = ('_uid', '_type', '_version', 'created', 'updated')
 
 
-class BaseChangeAttachmentSerializer(serializers.ModelSerializer):
+class BaseChangeAttachmentSerializer(StandardizedModelSerializer):
     class Meta:
         model = None
         fields = (

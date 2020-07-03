@@ -23,7 +23,8 @@ def _create_author(first_name='first_name', last_name='last_name'):
     address.save()
     author = Author(
         first_name=first_name, last_name=last_name,
-        date_of_birth=timezone.now() - timedelta(days=9999), address=address)
+        date_of_birth=timezone.now().date() - timedelta(days=9999),
+        address=address)
     author.save()
     return author
 

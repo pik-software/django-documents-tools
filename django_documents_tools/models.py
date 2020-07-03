@@ -31,7 +31,7 @@ class Dated(models.Model):
         editable=False, auto_now=True, db_index=True,
         verbose_name=_('updated'))
     deleted = models.DateTimeField(
-        editable=False, null=True, blank=True, db_index=True,
+        null=True, blank=True, db_index=True,
         verbose_name=_('deleted'))
 
     class Meta:
@@ -351,7 +351,9 @@ class Changes:
             '{app_label}.add_{model_name}': (
                 'document_name', 'document_date', 'document_link',
                 'document_is_draft', 'document_fields', 'attachment',
-                primary_field_name, *documented_fields)}
+                primary_field_name, *documented_fields),
+            '{app_label}.can_change_deleted': ('deleted',)
+        }
         attachment_title = (
             self.change_attachment_model._meta.verbose_name.title())  # noqa: protected-access
         attrs['snapshot'] = models.ForeignKey(
@@ -367,7 +369,10 @@ class Changes:
             validators=[LimitedChoicesValidator(documented_fields)])
         base_meta = {
             'ordering': ('-document_date',),
-            'get_latest_by': 'document_date'}
+            'get_latest_by': 'document_date',
+            'permissions': (
+                ('can_change_deleted', _('Can change deleted field')),
+            )}
         attrs.update(Meta=type("Meta", (), self.get_meta_options(
             model, base_meta, self.change_opts)))
         if self.change_opts['table_name'] is not None:

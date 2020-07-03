@@ -68,3 +68,41 @@ def book_snapshot_model(book_change_model):
 @pytest.fixture
 def book_change_attachment_model(book_change_model):
     return book_change_model.attachment.field.related_model
+
+
+@pytest.fixture
+def api_user():
+    from django.contrib.auth import get_user_model
+    user_model = get_user_model()
+    user = user_model(username='test', email='test@test.ru', is_active=True)
+    user.set_password('test_password')
+    user.save()
+    return user
+
+
+@pytest.fixture
+def api_client(api_user):
+    from rest_framework.test import APIClient
+    client = APIClient()
+    client.force_login(api_user)
+    return client
+
+
+def add_user_model_permissions(user, model, *actions):
+    from django.contrib.contenttypes.models import ContentType
+    from django.contrib.auth.models import Permission
+
+    ctype = ContentType.objects.get_for_model(model)
+    user.user_permissions.add(*(
+        Permission.objects.get(codename=f'{action}_{model._meta.model_name}',  # noqa: protected-access
+                               content_type=ctype)
+        for action in actions
+    ))
+
+
+def add_permissions_to_user(user, permission_codes):
+    from django.contrib.auth.models import Permission
+
+    for permission_code in permission_codes:
+        permission = Permission.objects.get(codename=permission_code)
+        user.user_permissions.add(permission)
