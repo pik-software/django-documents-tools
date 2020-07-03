@@ -40,6 +40,7 @@ def validate_change_attrs(model, change, attrs):
 
         setattrs(documented_instance, **kwargs)
         documented_instance.full_clean()
+        documented_instance.refresh_from_db()
     else:
         change = model(**attrs)
         documented_instance = getattr(change, documented_model_field)
@@ -47,6 +48,7 @@ def validate_change_attrs(model, change, attrs):
         if documented_instance:
             setattrs(documented_instance, **kwargs)
             documented_instance.full_clean()
+            documented_instance.refresh_from_db()
         elif tools_settings.CREATE_BUSINESS_ENTITY_AFTER_CHANGE_CREATED:
             new_documented = documented_model(**kwargs)
             new_documented.full_clean()
