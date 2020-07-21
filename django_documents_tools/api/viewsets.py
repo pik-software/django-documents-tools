@@ -94,7 +94,7 @@ def get_snapshot_viewset(change_viewset, documented_viewset):
 
     snapshot_serializer = get_snapshot_serializer(
         snapshot_model, change_serializer)
-    snapshot_filter = get_snapshot_filter(snapshot_model, change_viewset)
+    snapshot_filter = get_snapshot_filter(snapshot_model, documented_viewset)
 
     attrs = {'serializer_class': snapshot_serializer,
              'filter_class': snapshot_filter,

@@ -110,17 +110,6 @@ class BaseChangeAttachmentFilter(FilterSet):
         }
 
 
-def get_documented_model_filter(model):
-    meta = type(f'Meta', (DocumentedModelFilterBase.Meta,), {'model': model})
-    pk_field_name = model._meta.pk.name  # noqa: protected-access
-    attrs = {
-        'Meta': meta,
-        pk_field_name: AutoFilter(lookups=UID_LOOKUPS)
-    }
-    name = f'LinkTo{model._meta.object_name}Filter'  # noqa: protected-access
-    return type(name, (DocumentedModelFilterBase,), attrs)
-
-
 def get_change_filter(model, orig_viewset):
     if model._filterset:  # noqa: protected-access
         return import_string(model._filterset)  # noqa: protected-access
@@ -140,20 +129,15 @@ def get_change_filter(model, orig_viewset):
     return type(name, (BaseChangeFilter,), attrs)
 
 
-def get_snapshot_filter(model, change_viewset):
+def get_snapshot_filter(model, orig_viewset):
     if model._filterset:  # noqa: protected-access
         return import_string(model._filterset)  # noqa: protected-access
 
-    change_model = change_viewset.serializer_class.Meta.model
-    snapshot_model = change_model._meta.get_field('snapshot').related_model  # noqa: protected-access
-    documented_model = getattr(
-        snapshot_model,
-        change_model._documented_model_field).field.related_model  # noqa: protected-access
-    pk_field_name = snapshot_model._meta.pk.name  # noqa: protected-access
+    documented_model = orig_viewset.serializer_class.Meta.model
+    pk_field_name = model._meta.pk.name  # noqa: protected-access
     documented_field = documented_model._meta.model_name  # noqa: protected-access
     documented_filter = RelatedFilter(
-        get_documented_model_filter(documented_model),
-        queryset=documented_model.objects.all())
+        orig_viewset.filter_class, queryset=documented_model.objects.all())
 
     meta = type(f'Meta', (BaseSnapshotFilter.Meta,), {'model': model})
     attrs = {
@@ -161,6 +145,7 @@ def get_snapshot_filter(model, change_viewset):
         'Meta': meta,
         pk_field_name: AutoFilter(lookups=UID_LOOKUPS)
     }
+
     name = f'{model._meta.object_name}Filter'  # noqa: protected-access
     return type(name, (BaseSnapshotFilter,), attrs)
 
