@@ -31,9 +31,10 @@ def validate_change_attrs(model, change, attrs):
     if change and getattr(change, documented_model_field):
         documented_instance = getattr(change, documented_model_field)
         kwargs = change.get_changes()
-        if change.snapshot:
+        document_fields = attrs.get('document_fields')
+        if change.snapshot and document_fields:
             changes = {}
-            for field_name in attrs['document_fields']:
+            for field_name in document_fields:
                 if field_name in attrs.keys():
                     changes[field_name] = attrs[field_name]
             kwargs = {**change.snapshot.state, **changes}
