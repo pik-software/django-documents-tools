@@ -2,8 +2,7 @@ from rest_framework import serializers
 from django.db import models
 from django.utils.module_loading import import_string
 
-from django_documents_tools.utils import (
-    check_subclass, validate_change_attrs, LimitedChoicesValidator)
+from django_documents_tools.utils import check_subclass, validate_change_attrs
 from ..settings import tools_settings
 
 
@@ -12,6 +11,7 @@ NON_REQUIRED_KWARGS = {'required': False, 'allow_null': True}
 
 class BaseChangeSerializer(serializers.ModelSerializer):
     document_link = serializers.URLField(default='', allow_blank=True)
+    document_fields = serializers.ListField(allow_empty=False, required=True)
 
     def validate(self, attrs):
         # Ensure that new documented obj will be in correct state.
@@ -99,6 +99,11 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
         else:
             implicit_fields_extra_kwargs[name] = NON_REQUIRED_KWARGS
 
+    base_serializer_extra_kwargs = getattr(
+        base_change_serializer.Meta, 'extra_kwargs', {})
+    extra_kwargs = {
+        **implicit_fields_extra_kwargs,
+        **base_serializer_extra_kwargs}
     attrs[documented_field] = get_documented_model_serializer(
         documented_model)(**NON_REQUIRED_KWARGS)
     attrs['attachment'] = get_change_attachment_link_serializer(
@@ -106,7 +111,7 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
     attrs['Meta'] = type(
         'Meta', (base_change_serializer.Meta,),
         {'model': model, 'fields': fields, 'read_only_fields': [],
-         'extra_kwargs': implicit_fields_extra_kwargs})
+         'extra_kwargs': extra_kwargs})
 
     name = f'{opts.object_name}Serializer'
     return type(name, (base_change_serializer,), attrs)
