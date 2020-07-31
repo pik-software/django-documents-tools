@@ -101,9 +101,6 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
 
     base_serializer_extra_kwargs = getattr(
         base_change_serializer.Meta, 'extra_kwargs', {})
-    extra_kwargs = {
-        **implicit_fields_extra_kwargs,
-        **base_serializer_extra_kwargs}
     attrs[documented_field] = get_documented_model_serializer(
         documented_model)(**NON_REQUIRED_KWARGS)
     attrs['attachment'] = get_change_attachment_link_serializer(
@@ -111,7 +108,9 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
     attrs['Meta'] = type(
         'Meta', (base_change_serializer.Meta,),
         {'model': model, 'fields': fields, 'read_only_fields': [],
-         'extra_kwargs': extra_kwargs})
+         'extra_kwargs': {
+            **implicit_fields_extra_kwargs,
+            **base_serializer_extra_kwargs}})
 
     name = f'{opts.object_name}Serializer'
     return type(name, (base_change_serializer,), attrs)

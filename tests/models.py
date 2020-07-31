@@ -74,5 +74,5 @@ class Book(Documented):
     isbn = models.CharField('ISBN', max_length=13, blank=True)
     is_published = models.BooleanField(default=True)
 
-    def __str__(self):
+    def __str__(self):  # noqa: invalid-str-returned
         return self.title
