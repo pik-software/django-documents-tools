@@ -12,7 +12,6 @@ NON_REQUIRED_KWARGS = {'required': False, 'allow_null': True}
 
 class BaseChangeSerializer(serializers.ModelSerializer):
     document_link = serializers.URLField(default='', allow_blank=True)
-    document_fields = serializers.ListField(allow_empty=False, required=True)
 
     def validate(self, attrs):
         # Ensure that new documented obj will be in correct state.
