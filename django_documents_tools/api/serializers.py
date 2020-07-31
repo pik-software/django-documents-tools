@@ -2,7 +2,8 @@ from rest_framework import serializers
 from django.db import models
 from django.utils.module_loading import import_string
 
-from django_documents_tools.utils import check_subclass, validate_change_attrs
+from django_documents_tools.utils import (
+    check_subclass, validate_change_attrs, LimitedChoicesValidator)
 from ..settings import tools_settings
 
 
