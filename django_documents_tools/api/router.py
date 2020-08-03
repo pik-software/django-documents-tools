@@ -29,7 +29,6 @@ class DocumentedRouter(DefaultRouter):
                 super().register(
                     f'{name}-list', change_attachment_viewset, name)
 
-
     def register(self, prefix, viewset, basename=None, base_name=None):
         if getattr(viewset, 'allow_changes', True):
             self.register_viewsets(viewset)

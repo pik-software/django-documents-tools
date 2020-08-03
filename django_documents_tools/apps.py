@@ -5,5 +5,5 @@ class DjangoDocumentsToolsConfig(AppConfig):
     name = 'django_documents_tools'
 
     def ready(self):
-        from .import signals
-        assert signals  # noqa unused import
+        from .import signals  # noqa: import-outside-toplevel
+        assert signals

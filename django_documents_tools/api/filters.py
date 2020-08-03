@@ -118,7 +118,7 @@ def get_change_filter(model, orig_viewset):
     documented_field = model._documented_model_field  # noqa: protected-access
     documented_filter = RelatedFilter(
         orig_viewset.filter_class, queryset=documented_model.objects.all())
-    meta = type(f'Meta', (BaseChangeFilter.Meta,), {'model': model})
+    meta = type('Meta', (BaseChangeFilter.Meta,), {'model': model})
     pk_field_name = model._meta.pk.name  # noqa: protected-access
     attrs = {
         documented_field: documented_filter,
@@ -139,7 +139,7 @@ def get_snapshot_filter(model, orig_viewset):
     documented_filter = RelatedFilter(
         orig_viewset.filter_class, queryset=documented_model.objects.all())
 
-    meta = type(f'Meta', (BaseSnapshotFilter.Meta,), {'model': model})
+    meta = type('Meta', (BaseSnapshotFilter.Meta,), {'model': model})
     attrs = {
         documented_field: documented_filter,
         'Meta': meta,

@@ -55,7 +55,7 @@ def pytest_configure(config):
 
 @pytest.fixture
 def book_change_model():
-    from tests.models import Book
+    from tests.models import Book  # noqa: import-outside-toplevel
 
     return Book.changes.model
 
