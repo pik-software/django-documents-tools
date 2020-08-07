@@ -11,7 +11,7 @@ from django.utils import timezone
 from .exceptions import (
     ObservableInstanceRequiredError,
     SnapshotDuplicateExistsError, ChangesAreNotCreatedYetError)
-from .signals import change_applied
+from .signals import snapshot_applied
 
 LOGGER = logging.getLogger(__name__)
 
@@ -55,14 +55,16 @@ def _update_snapshot_via_previous(prev_snapshot, snapshot):
     prev_d_fields = prev_snapshot.document_fields_from_changes
     prev_d_fields = prev_d_fields | set(prev_snapshot.document_fields)
     prev_d_fields -= d_fields
-    state = snapshot.state
     prev_snap_st = prev_snapshot.state
+    update_state = {}
     for d_field in prev_d_fields:
-        state[d_field] = prev_snap_st.get(d_field)
-    changed = setattrs(snapshot, **state)
-    if changed:
-        updated_fields = set(snapshot.document_fields) | set(changed)
-        snapshot.document_fields = list(updated_fields)
+        update_state[d_field] = prev_snap_st.get(d_field)
+    if update_state:
+        for attr, value in update_state.items():
+            setattr(snapshot, attr, value)
+        for attr in update_state.keys():
+            if attr not in snapshot.document_fields:
+                snapshot.document_fields.append(attr)
         snapshot.save()
 
 
@@ -317,15 +319,16 @@ class ChangeManager(models.Manager):
 
         snapshot = snapshots_slicer.latest_snapshot
 
+        changed = {}
         if snapshot:
             changed = setattrs(self.instance, **snapshot.state)
             change = snapshot.changes.first()
-            change_applied.send(
+            snapshot_applied.send(
                 sender=self.instance.changes.model,
                 documented_instance=self.instance,
                 change=change, updated_fields=changed)
 
-        return self.instance
+        return self.instance, changed
 
     def get_queryset(self):
         queryset = super().get_queryset()

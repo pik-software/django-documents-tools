@@ -5,10 +5,11 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.deconstruct import deconstructible
 
-from django_documents_tools.exceptions import (
+from .exceptions import (
     BusinessEntityCreationIsNotAllowedError)
-from django_documents_tools.manager import setattrs
-from django_documents_tools.settings import tools_settings
+from .manager import setattrs
+from .settings import tools_settings
+from .signals import change_applied
 
 
 def get_change_attachment_file_path(instance, file_name):
@@ -47,6 +48,7 @@ def validate_change_attrs(model, change, attrs):
         documented_instance = getattr(change, documented_model_field)
         kwargs = change.get_changes()
         if documented_instance:
+            document_fields = attrs.get('document_fields')
             setattrs(documented_instance, **kwargs)
             documented_instance.full_clean()
             documented_instance.refresh_from_db()
@@ -88,6 +90,10 @@ def apply_change_receiver(sender, **kwargs):
             raise BusinessEntityCreationIsNotAllowedError()
 
         applicable_date = timezone.now().date()
-        new_documented.changes.apply_to_object(date=applicable_date)
+        _, updated_fields = new_documented.changes.apply_to_object(
+            date=applicable_date)
         new_documented.save(apply_documents=False)
         change.refresh_from_db()
+        change_applied.send(
+            sender=sender, documented_instance=new_documented,
+            change=change, updated_fields=updated_fields)
