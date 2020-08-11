@@ -26,6 +26,7 @@ DOCUMENTS_TOOLS = {
     'BASE_CHANGE_SERIALIZER': 'path_to_your_model_serializer',
     'BASE_CHANGE_VIEWSET': 'path_to_your_model_viewset',
     'BASE_SNAPSHOT_SERIALIZER': 'path_to_your_model_serializer',
+    'BASE_SNAPSHOT_LINK_SERIALIZER': 'path_to_your_snapshot_link_serializer',
     'BASE_SNAPSHOT_VIEWSET': 'path_to_your_model_viewset',
     'BASE_DOCUMENTED_MODEL_LINK_SERIALIZER': 'path_to_your_model_serializer',
     'BASE_CHANGE_ATTACHMENT_SERIALIZER': 'path_to_your_model_serializer',
