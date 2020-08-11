@@ -62,7 +62,6 @@ def _update_snapshot_via_previous(prev_snapshot, snapshot):
     if update_state:
         for attr, value in update_state.items():
             setattr(snapshot, attr, value)
-        for attr in update_state.keys():
             if attr not in snapshot.document_fields:
                 snapshot.document_fields.append(attr)
         snapshot.save()
