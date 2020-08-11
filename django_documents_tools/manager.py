@@ -58,7 +58,7 @@ def _update_snapshot_via_previous(prev_snapshot, snapshot):
     prev_snap_st = prev_snapshot.state
     update_state = {}
     for d_field in prev_d_fields:
-        update_state[d_field] = prev_snap_st.get(d_field)
+        update_state[d_field] = prev_snap_st[d_field]
     if update_state:
         for attr, value in update_state.items():
             setattr(snapshot, attr, value)
@@ -321,11 +321,10 @@ class ChangeManager(models.Manager):
         changed = {}
         if snapshot:
             changed = setattrs(self.instance, **snapshot.state)
-            change = snapshot.changes.first()
             snapshot_applied.send(
                 sender=self.instance.changes.model,
                 documented_instance=self.instance,
-                change=change, updated_fields=changed)
+                snapshot=snapshot, updated_fields=changed)
 
         return self.instance, changed
 

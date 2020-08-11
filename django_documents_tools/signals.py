@@ -59,6 +59,6 @@ def process_migrate(
 
 
 snapshot_applied = Signal(  # noqa: pylint=invalid-name
-    providing_args=['documented_instance', 'change', 'updated_fields'])
+    providing_args=['documented_instance', 'snapshot', 'updated_fields'])
 change_applied = Signal(  # noqa: pylint=invalid-name
     providing_args=['documented_instance', 'change', 'updated_fields'])
