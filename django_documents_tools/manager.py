@@ -60,11 +60,17 @@ def _update_snapshot_via_previous(prev_snapshot, snapshot):
     for d_field in prev_d_fields:
         update_state[d_field] = prev_snap_st[d_field]
     if update_state:
+        is_changed = False
         for attr, value in update_state.items():
-            setattr(snapshot, attr, value)
+            old_value = getattr(snapshot, attr)
+            if value != old_value:
+                setattr(snapshot, attr, value)
+                is_changed = True
             if attr not in snapshot.document_fields:
                 snapshot.document_fields.append(attr)
-        snapshot.save()
+                is_changed = True
+        if is_changed:
+            snapshot.save()
 
 
 class ChangeDescriptor:
