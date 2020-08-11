@@ -7,6 +7,8 @@ from django.test.signals import setting_changed
 SETTINGS_NAME = 'DOCUMENTS_TOOLS'
 BASE_SNAPSHOT_SERIALIZER = (
     'django_documents_tools.api.serializers.BaseSnapshotSerializer')
+BASE_SNAPSHOT_LINK_SERIALIZER = (
+    'django_documents_tools.api.serializers.BaseSnapshotLinkSerializer')
 BASE_SNAPSHOT_VIEWSET = (
     'django_documents_tools.api.viewsets.BaseSnapshotViewSet')
 BASE_CHANGE_SERIALIZER = (
@@ -38,6 +40,7 @@ class ToolsSettings(ChainMap): # noqa: too-many-ancestors
     DEFAULT_VALUE = object()
     DEFAULT_SETTINGS = {
         'BASE_SNAPSHOT_SERIALIZER': BASE_SNAPSHOT_SERIALIZER,
+        'BASE_SNAPSHOT_LINK_SERIALIZER': BASE_SNAPSHOT_LINK_SERIALIZER,
         'BASE_SNAPSHOT_VIEWSET': BASE_SNAPSHOT_VIEWSET,
         'BASE_CHANGE_SERIALIZER': BASE_CHANGE_SERIALIZER,
         'BASE_CHANGE_VIEWSET': BASE_CHANGE_VIEWSET,

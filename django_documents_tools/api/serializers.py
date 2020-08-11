@@ -24,7 +24,7 @@ class BaseChangeSerializer(serializers.ModelSerializer):
         fields = (
             '_uid', '_type', '_version', 'created', 'updated', 'document_name',
             'document_date', 'document_link', 'document_is_draft',
-            'document_fields', 'attachment')
+            'document_fields', 'attachment', 'snapshot')
 
 
 class BaseSnapshotSerializer(serializers.ModelSerializer):
@@ -47,6 +47,12 @@ class BaseChangeAttachmentLinkSerializer(serializers.ModelSerializer):
         fields = ('_uid', '_type', '_version', 'created', 'updated')
 
 
+class BaseSnapshotLinkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = None
+        fields = ('_uid', '_type', '_version', 'created', 'updated')
+
+
 class BaseChangeAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
@@ -58,7 +64,7 @@ def clone_serializer_field(field, **kwargs):
     return type(field)(*field._args, **{**field._kwargs, **kwargs})  # noqa: protected-access
 
 
-def get_change_serializer_class(model, serializer_class, allowed_fields=None):
+def get_change_serializer_class(model, serializer_class, allowed_fields=None):  # noqa: to-many-locals
     """ Generating target model based change serializer
 
         1. Creating target model fk serializer field
@@ -77,6 +83,8 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
     change_attachment_model = model.attachment.field.related_model
     documented_field = model._documented_model_field  # noqa: protected-access
     documented_model = serializer_class.Meta.model
+    snapshot_model = model.snapshot.field.related_model
+
     fields = (base_change_serializer.Meta.fields + model._all_documented_fields  # noqa: protected-access
               + (documented_field, ))
 
@@ -105,6 +113,8 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):
         documented_model)(**NON_REQUIRED_KWARGS)
     attrs['attachment'] = get_change_attachment_link_serializer(
         change_attachment_model)(**NON_REQUIRED_KWARGS)
+    attrs['snapshot'] = get_snapshot_link_serializer(snapshot_model)(
+        read_only=True)
     attrs['Meta'] = type(
         'Meta', (base_change_serializer.Meta,),
         {'model': model, 'fields': fields, 'read_only_fields': [],
@@ -153,6 +163,16 @@ def get_snapshot_serializer(model, change_serializer):
     name = f'{model._meta.object_name}Serializer'  # noqa: protected-access
     bases = (base_snapshot_serializer, change_serializer)
     return type(name, bases, attrs)
+
+
+def get_snapshot_link_serializer(model):
+    base = import_string(tools_settings.BASE_SNAPSHOT_LINK_SERIALIZER)
+    check_subclass(base, BaseSnapshotLinkSerializer)
+
+    meta_opts = {'model': model, 'fields': base.Meta.fields}
+    meta = type('Meta', (base.Meta,), meta_opts)
+    name = f'{model._meta.object_name}LinkSerializer'  # noqa: protected-access
+    return type(name, (base,), {'Meta': meta})
 
 
 def get_change_attachment_link_serializer(model):
