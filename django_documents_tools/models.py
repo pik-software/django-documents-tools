@@ -364,7 +364,7 @@ class Changes:
             verbose_name=attachment_title)  # noqa: protected-access
         attrs['document_fields'] = ArrayField(
             models.CharField(_('Атрибуты'), max_length=255), default=list,
-            validators=[LimitedChoicesValidator(documented_fields)])
+            validators=[LimitedChoicesValidator(sorted(documented_fields))])
         base_meta = {
             'ordering': ('-document_date',),
             'get_latest_by': 'document_date'}
