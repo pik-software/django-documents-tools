@@ -14,7 +14,7 @@ class BaseDocumentedViewSet(ModelViewSet):
     allow_history = False
 
     lookup_field = 'uid'
-    lookup_url_kwarg = '_uid'
+    lookup_url_kwarg = 'uid'
     serializer_class = None
     filter_class = None
     select_related_fields = ()

@@ -40,10 +40,10 @@ class TestGetChangeSerializerClass:
 
         assert issubclass(book_change_serializer, BaseChangeSerializer)
         assert book_change_serializer.Meta.fields == (
-            '_uid', '_type', '_version', 'created', 'updated', 'document_name',
-            'document_date', 'document_link', 'document_is_draft',
-            'document_fields', 'attachment', 'snapshot', 'title', 'author',
-            'summary', 'isbn', 'is_published', 'book')
+            'uid', 'type', 'version', '_uid', '_type', '_version', 'created',
+            'updated', 'document_name', 'document_date', 'document_link',
+            'document_is_draft', 'document_fields', 'attachment', 'snapshot',
+            'title', 'author', 'summary', 'isbn', 'is_published', 'book')
 
     def test_get_custom(self, book_change_model):
         custom_settings = {
@@ -56,10 +56,11 @@ class TestGetChangeSerializerClass:
 
         assert issubclass(book_change_serializer, CustomChangeSerializer)
         assert book_change_serializer.Meta.fields == (
-            '_uid', '_type', '_version', 'created', 'updated', 'document_name',
-            'document_date', 'document_link', 'document_is_draft',
-            'document_fields', 'attachment', 'snapshot', 'custom_field',
-            'title', 'author', 'summary', 'isbn', 'is_published', 'book')
+            'uid', 'type', 'version', '_uid', '_type', '_version', 'created',
+            'updated', 'document_name', 'document_date', 'document_link',
+            'document_is_draft', 'document_fields', 'attachment', 'snapshot',
+            'custom_field', 'title', 'author', 'summary', 'isbn',
+            'is_published', 'book')
 
     def test_get_unknown(self, book_change_model):
         custom_settings = {
@@ -80,10 +81,11 @@ class TestGetChangeSerializerClass:
 
         assert issubclass(book_change_serializer, CustomChangeSerializer)
         assert book_change_serializer.Meta.fields == (
-            '_uid', '_type', '_version', 'created', 'updated', 'document_name',
-            'document_date', 'document_link', 'document_is_draft',
-            'document_fields', 'attachment', 'snapshot', 'custom_field',
-            'title', 'author', 'summary', 'isbn', 'is_published', 'book')
+            'uid', 'type', 'version', '_uid', '_type', '_version', 'created',
+            'updated', 'document_name', 'document_date', 'document_link',
+            'document_is_draft', 'document_fields', 'attachment', 'snapshot',
+            'custom_field', 'title', 'author', 'summary', 'isbn',
+            'is_published', 'book')
 
 
 class TestGetSnapshotSerializerClass:
@@ -101,9 +103,9 @@ class TestGetSnapshotSerializerClass:
 
         assert issubclass(book_snapshot_serializer, BaseSnapshotSerializer)
         assert book_snapshot_serializer.Meta.fields == (
-            '_uid', '_type', '_version', 'created', 'updated',
-            'document_fields', 'history_date', 'title', 'author', 'summary',
-            'isbn', 'is_published', 'book')
+            'uid', 'type', 'version', '_uid', '_type', '_version', 'created',
+            'updated', 'document_fields', 'history_date', 'title', 'author',
+            'summary', 'isbn', 'is_published', 'book')
 
     def test_get_custom(self, book_change_model, book_snapshot_model):
         book_change_serializer = get_change_serializer_class(
@@ -118,9 +120,9 @@ class TestGetSnapshotSerializerClass:
 
         assert issubclass(book_snapshot_serializer, CustomSnapshotSerializer)
         assert book_snapshot_serializer.Meta.fields == (
-            '_uid', '_type', '_version', 'created', 'updated',
-            'document_fields', 'history_date', 'custom_field', 'title',
-            'author', 'summary', 'isbn', 'is_published', 'book')
+            'uid', 'type', 'version', '_uid', '_type', '_version', 'created',
+            'updated', 'document_fields', 'history_date', 'custom_field',
+            'title', 'author', 'summary', 'isbn', 'is_published', 'book')
 
     def test_get_unknown(self, book_change_model, book_snapshot_model):
         book_change_serializer = get_change_serializer_class(
@@ -147,9 +149,9 @@ class TestGetSnapshotSerializerClass:
 
         assert issubclass(book_snapshot_serializer, CustomSnapshotSerializer)
         assert book_snapshot_serializer.Meta.fields == (
-            '_uid', '_type', '_version', 'created', 'updated',
-            'document_fields', 'history_date', 'custom_field', 'title',
-            'author', 'summary', 'isbn', 'is_published', 'book')
+            'uid', 'type', 'version', '_uid', '_type', '_version', 'created',
+            'updated', 'document_fields', 'history_date', 'custom_field',
+            'title', 'author', 'summary', 'isbn', 'is_published', 'book')
 
 
 class TestGetDocumentedModelLinkSerializerClass:
@@ -166,7 +168,8 @@ class TestGetDocumentedModelLinkSerializerClass:
         assert issubclass(
             book_link_serializer, BaseDocumentedModelLinkSerializer)
         assert book_link_serializer.Meta.fields == (
-            '_uid', '_type', '_version', 'created', 'updated')
+            'uid', 'type', 'version', '_uid', '_type', '_version', 'created',
+            'updated')
 
     def test_get_custom(self):
         custom_settings = {
@@ -179,7 +182,8 @@ class TestGetDocumentedModelLinkSerializerClass:
         assert issubclass(
             book_link_serializer, CustomDocumentedModelLinkSerializer)
         assert book_link_serializer.Meta.fields == (
-            '_uid', '_type', '_version', 'created', 'updated', 'custom_field')
+            'uid', 'type', 'version', '_uid', '_type', '_version', 'created',
+            'updated', 'custom_field')
 
     def test_get_unknown(self, book_change_model):
         custom_settings = {
@@ -208,7 +212,8 @@ class TestGetChangeAttachmentSerializerClass:
         assert issubclass(
             book_change_attachment_serializer, BaseChangeAttachmentSerializer)
         assert book_change_attachment_serializer.Meta.fields == (
-            '_uid', '_type', '_version', 'created', 'updated', 'file')
+            'uid', 'type', 'version', '_uid', '_type', '_version', 'created',
+            'updated', 'file')
 
     def test_get_custom(self, book_change_attachment_model):
         custom_settings = {
@@ -223,8 +228,8 @@ class TestGetChangeAttachmentSerializerClass:
             book_change_attachment_serializer,
             CustomChangeAttachmentSerializer)
         assert book_change_attachment_serializer.Meta.fields == (
-            '_uid', '_type', '_version', 'created', 'updated', 'file',
-            'custom_field')
+            'uid', 'type', 'version', '_uid', '_type', '_version', 'created',
+            'updated', 'file', 'custom_field')
 
     def test_get_unknown(self, book_change_attachment_model):
         custom_settings = {
@@ -248,8 +253,8 @@ class TestGetChangeAttachmentSerializerClass:
             book_change_attachment_serializer,
             CustomChangeAttachmentSerializer)
         assert book_change_attachment_serializer.Meta.fields == (
-            '_uid', '_type', '_version', 'created', 'updated', 'file',
-            'custom_field')
+            'uid', 'type', 'version', '_uid', '_type', '_version', 'created',
+            'updated', 'file', 'custom_field')
 
 
 @pytest.mark.django_db
