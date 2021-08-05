@@ -1,5 +1,6 @@
 from django.contrib.postgres.fields import ArrayField
 from django.utils.module_loading import import_string
+from django_filters import OrderingFilter
 from rest_framework.fields import DateTimeField
 from rest_framework_filters import (
     FilterSet, RelatedFilter, IsoDateTimeFilter, BaseCSVFilter, AutoFilter,
@@ -32,6 +33,13 @@ class BaseChangeFilter(FilterSet):
     document_fields = ArrayFilter()
     is_deleted = BooleanFilter(
         field_name='deleted', method='filter_is_deleted')
+    order_by_field = 'ordering'
+    ordering = OrderingFilter(fields=(
+        ('document_date', 'document_date'),
+        ('created', 'created'),
+        ('updated', 'updated'),
+        ('guid', 'guid'),
+    ))
 
     @staticmethod
     def filter_is_deleted(queryset, name, value):
@@ -56,6 +64,13 @@ class BaseSnapshotFilter(FilterSet):
     history_date = AutoFilter(lookups=DATE_LOOKUPS)
     is_deleted = BooleanFilter(
         field_name='deleted', method='filter_is_deleted')
+    order_by_field = 'ordering'
+    ordering = OrderingFilter(fields=(
+        ('history_date', 'history_date'),
+        ('created', 'created'),
+        ('updated', 'updated'),
+        ('guid', 'guid'),
+    ))
 
     @staticmethod
     def filter_is_deleted(queryset, name, value):
@@ -90,6 +105,12 @@ class BaseChangeAttachmentFilter(FilterSet):
     deleted = AutoFilter(lookups=DATE_LOOKUPS)
     is_deleted = BooleanFilter(
         field_name='deleted', method='filter_is_deleted')
+    order_by_field = 'ordering'
+    ordering = OrderingFilter(fields=(
+        ('created', 'created'),
+        ('updated', 'updated'),
+        ('guid', 'guid'),
+    ))
 
     @staticmethod
     def filter_is_deleted(queryset, name, value):

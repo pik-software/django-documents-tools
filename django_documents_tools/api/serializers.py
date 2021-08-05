@@ -8,7 +8,7 @@ from ..settings import tools_settings
 
 
 NON_REQUIRED_KWARGS = {'required': False, 'allow_null': True}
-DEPRECATED_FIELDS = ('_uid', '_type', '_version', )
+STANDARD_READONLY_FIELDS = ('guid', 'type', 'version', 'created', 'updated', )
 
 
 class BaseChangeSerializer(serializers.ModelSerializer):
@@ -23,7 +23,7 @@ class BaseChangeSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (
-            'uid', 'type', 'version', *DEPRECATED_FIELDS, 'created', 'updated',
+            *STANDARD_READONLY_FIELDS,
             'document_name', 'document_date', 'document_link',
             'document_is_draft', 'document_fields', 'attachment', 'snapshot')
 
@@ -32,37 +32,31 @@ class BaseSnapshotSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (
-            'uid', 'type', 'version', *DEPRECATED_FIELDS, 'created', 'updated',
-            'document_fields', 'history_date')
+            *STANDARD_READONLY_FIELDS, 'document_fields', 'history_date')
 
 
 class BaseDocumentedModelLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
-        fields = (
-            'uid', 'type', 'version', *DEPRECATED_FIELDS, 'created', 'updated')
+        fields = (*STANDARD_READONLY_FIELDS, )
 
 
 class BaseChangeAttachmentLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
-        fields = (
-            'uid', 'type', 'version', *DEPRECATED_FIELDS, 'created', 'updated')
+        fields = (*STANDARD_READONLY_FIELDS, )
 
 
 class BaseSnapshotLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
-        fields = (
-            'uid', 'type', 'version', *DEPRECATED_FIELDS, 'created', 'updated')
+        fields = (*STANDARD_READONLY_FIELDS, )
 
 
 class BaseChangeAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
-        fields = (
-            'uid', 'type', 'version', *DEPRECATED_FIELDS, 'created', 'updated',
-            'file')
+        fields = (*STANDARD_READONLY_FIELDS, 'file')
 
 
 def clone_serializer_field(field, **kwargs):

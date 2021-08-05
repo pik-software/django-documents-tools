@@ -14,7 +14,7 @@ class BaseDocumentedViewSet(ModelViewSet):
     allow_history = False
 
     lookup_field = 'uid'
-    lookup_url_kwarg = 'uid'
+    lookup_url_kwarg = 'guid'
     serializer_class = None
     filter_class = None
     select_related_fields = ()
@@ -30,13 +30,11 @@ class BaseChangeViewSet(BaseDocumentedViewSet):
     allow_history = True
 
     ordering = ('document_date', )
-    ordering_fields = ('document_date', 'updated', 'uid', )
     search_fields = ('document_name', )
 
 
 class BaseSnapshotViewSet(BaseDocumentedViewSet):
     ordering = ('history_date',)
-    ordering_fields = ('history_date', 'updated', 'uid',)
     search_fields = ('changes__document_name',)
 
 

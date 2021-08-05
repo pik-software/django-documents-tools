@@ -152,7 +152,7 @@ class BaseSnapshot(Dated):
         'Снапшоты вычисляются на основе логической истории')
 
     EXCLUDED_STATE_FIELDS = (
-        'uid', 'deleted', 'created', 'updated', 'version', 'history_date',
+        'guid', 'deleted', 'created', 'updated', 'version', 'history_date',
         'document_fields')
 
     changes = None
