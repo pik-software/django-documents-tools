@@ -28,7 +28,7 @@ class TestGetChangeViewSet:
         assert book_change_viewset.allow_history is True
         assert book_change_viewset.select_related_fields == ('book', 'author')
         assert book_change_viewset.lookup_field == 'uid'
-        assert book_change_viewset.lookup_url_kwarg == '_uid'
+        assert book_change_viewset.lookup_url_kwarg == 'guid'
 
     def test_get_custom(self):
         custom_settings = {
@@ -41,7 +41,7 @@ class TestGetChangeViewSet:
         assert book_change_viewset.allow_history is True
         assert book_change_viewset.select_related_fields == ('book', 'author')
         assert book_change_viewset.lookup_field == 'uid'
-        assert book_change_viewset.lookup_url_kwarg == '_uid'
+        assert book_change_viewset.lookup_url_kwarg == 'guid'
         assert book_change_viewset.prefetch_related_fields == ['test']
 
     def test_get_unknown(self):
@@ -63,7 +63,7 @@ class TestGetChangeViewSet:
         assert book_change_viewset.allow_history is True
         assert book_change_viewset.select_related_fields == ('book', 'author')
         assert book_change_viewset.lookup_field == 'uid'
-        assert book_change_viewset.lookup_url_kwarg == '_uid'
+        assert book_change_viewset.lookup_url_kwarg == 'guid'
         assert book_change_viewset.prefetch_related_fields == ['test']
 
 
@@ -84,7 +84,7 @@ class TestGetSnapshotViewSet:
         assert book_snapshot_viewset.select_related_fields == (
             'book', 'author')
         assert book_snapshot_viewset.lookup_field == 'uid'
-        assert book_snapshot_viewset.lookup_url_kwarg == '_uid'
+        assert book_snapshot_viewset.lookup_url_kwarg == 'guid'
 
     def test_get_custom(self):
         custom_settings = {
@@ -100,7 +100,7 @@ class TestGetSnapshotViewSet:
         assert book_snapshot_viewset.select_related_fields == (
             'book', 'author')
         assert book_snapshot_viewset.lookup_field == 'uid'
-        assert book_snapshot_viewset.lookup_url_kwarg == '_uid'
+        assert book_snapshot_viewset.lookup_url_kwarg == 'guid'
         assert book_snapshot_viewset.prefetch_related_fields == ['test']
 
     def test_get_unknown(self):
@@ -127,7 +127,7 @@ class TestGetSnapshotViewSet:
         assert book_snapshot_viewset.select_related_fields == (
             'book', 'author')
         assert book_snapshot_viewset.lookup_field == 'uid'
-        assert book_snapshot_viewset.lookup_url_kwarg == '_uid'
+        assert book_snapshot_viewset.lookup_url_kwarg == 'guid'
         assert book_snapshot_viewset.prefetch_related_fields == ['test']
 
 
@@ -149,7 +149,7 @@ class TestGetChangeAttachmentViewSet:
         assert book_change_attachment_viewset.select_related_fields == (
             'change',)
         assert book_change_attachment_viewset.lookup_field == 'uid'
-        assert book_change_attachment_viewset.lookup_url_kwarg == '_uid'
+        assert book_change_attachment_viewset.lookup_url_kwarg == 'guid'
 
     def test_get_custom(self):
         custom_settings = {
@@ -166,7 +166,7 @@ class TestGetChangeAttachmentViewSet:
         assert book_change_attachment_viewset.select_related_fields == (
             'change',)
         assert book_change_attachment_viewset.lookup_field == 'uid'
-        assert book_change_attachment_viewset.lookup_url_kwarg == '_uid'
+        assert book_change_attachment_viewset.lookup_url_kwarg == 'guid'
         assert book_change_attachment_viewset.prefetch_related_fields == [
             'test']
 
@@ -195,6 +195,6 @@ class TestGetChangeAttachmentViewSet:
         assert book_change_attachment_viewset.select_related_fields == (
             'change',)
         assert book_change_attachment_viewset.lookup_field == 'uid'
-        assert book_change_attachment_viewset.lookup_url_kwarg == '_uid'
+        assert book_change_attachment_viewset.lookup_url_kwarg == 'guid'
         assert book_change_attachment_viewset.prefetch_related_fields == [
             'test']

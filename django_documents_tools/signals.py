@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from django.apps import apps
 from django.db import migrations
@@ -49,8 +49,8 @@ def _process_operation(fake_apps, app, operation):
 
 @receiver(post_migrate)
 def process_migrate(
-        apps: StateApps, # noqa: redefined-outer-name
-        plan: List[Tuple[migrations.Migration, bool]], **kwargs):
+        apps: Union[StateApps, Tuple]=(), # noqa: redefined-outer-name
+        plan: Union[List[Tuple[migrations.Migration, bool]], Tuple] = (), **kwargs):
     for migration, is_reverse in plan:
         if is_reverse:
             continue

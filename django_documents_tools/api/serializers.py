@@ -8,6 +8,7 @@ from ..settings import tools_settings
 
 
 NON_REQUIRED_KWARGS = {'required': False, 'allow_null': True}
+STANDARD_READONLY_FIELDS = ('guid', 'type', 'version', 'created', 'updated', )
 
 
 class BaseChangeSerializer(serializers.ModelSerializer):
@@ -22,42 +23,40 @@ class BaseChangeSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (
-            '_uid', '_type', '_version', 'created', 'updated', 'document_name',
-            'document_date', 'document_link', 'document_is_draft',
-            'document_fields', 'attachment', 'snapshot')
+            *STANDARD_READONLY_FIELDS,
+            'document_name', 'document_date', 'document_link',
+            'document_is_draft', 'document_fields', 'attachment', 'snapshot')
 
 
 class BaseSnapshotSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (
-            '_uid', '_type', '_version', 'created', 'updated',
-            'document_fields', 'history_date')
+            *STANDARD_READONLY_FIELDS, 'document_fields', 'history_date')
 
 
 class BaseDocumentedModelLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
-        fields = ('_uid', '_type', '_version', 'created', 'updated')
+        fields = (*STANDARD_READONLY_FIELDS, )
 
 
 class BaseChangeAttachmentLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
-        fields = ('_uid', '_type', '_version', 'created', 'updated')
+        fields = (*STANDARD_READONLY_FIELDS, )
 
 
 class BaseSnapshotLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
-        fields = ('_uid', '_type', '_version', 'created', 'updated')
+        fields = (*STANDARD_READONLY_FIELDS, )
 
 
 class BaseChangeAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = None
-        fields = (
-            '_uid', '_type', '_version', 'created', 'updated', 'file')
+        fields = (*STANDARD_READONLY_FIELDS, 'file')
 
 
 def clone_serializer_field(field, **kwargs):
