@@ -16,7 +16,7 @@ class BaseDocumentedViewSet(ModelViewSet):
     lookup_field = 'uid'
     lookup_url_kwarg = 'guid'
     serializer_class = None
-    filter_class = None
+    filterset_class = None
     select_related_fields = ()
 
     def get_queryset(self):
@@ -70,7 +70,7 @@ def get_change_viewset(documented_viewset):
         *documented_viewset.select_related_fields)
 
     attrs = {'serializer_class': document_serializer,
-             'filter_class': document_filter,
+             'filterset_class': document_filter,
              'select_related_fields': select_related_fields,
              '__doc__': base_change_viewset.__doc__}
     name = f'{model._meta.object_name}ViewSet'  # noqa: protected-access
@@ -95,7 +95,7 @@ def get_snapshot_viewset(change_viewset, documented_viewset):
     snapshot_filter = get_snapshot_filter(snapshot_model, documented_viewset)
 
     attrs = {'serializer_class': snapshot_serializer,
-             'filter_class': snapshot_filter,
+             'filterset_class': snapshot_filter,
              'select_related_fields': change_viewset.select_related_fields,
              '__doc__': base_snapshot_viewset.__doc__}
 
@@ -105,7 +105,7 @@ def get_snapshot_viewset(change_viewset, documented_viewset):
 
 def get_change_attachment_viewset(change_viewset):
     change_model = change_viewset.serializer_class.Meta.model
-    change_filter = change_viewset.filter_class
+    change_filter = change_viewset.filterset_class
     change_attachment_model = (
         change_model._meta.get_field('attachment').related_model)  # noqa: protected-access
 
@@ -125,7 +125,7 @@ def get_change_attachment_viewset(change_viewset):
         change_attachment_model, change_filter)
     attrs = {
         'serializer_class': change_attachment_serializer,
-        'filter_class': change_attachment_filter,
+        'filterset_class': change_attachment_filter,
         '__doc__': base_change_attachment_viewset.__doc__
     }
 

@@ -14,7 +14,7 @@ class BookViewSet(ModelViewSet):
     lookup_field = 'uid'
     lookup_url_kwarg = '_uid'
     serializer_class = BookSerializer
-    filter_class = BookFilter
+    filterset_class = BookFilter
     select_related_fields = ['author']
     queryset = Book.objects.all()
 
@@ -38,5 +38,5 @@ class UnknownBookViewSet(ModelViewSet):
     lookup_field = 'uid'
     lookup_url_kwarg = '_uid'
     serializer_class = BookSerializer
-    filter_class = BookFilter
+    filterset_class = BookFilter
     select_related_fields = ['author']

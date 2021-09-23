@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.db.models.signals import class_prepared, post_save
-from django.utils.translation import ugettext, ugettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _
 from model_utils import FieldTracker
 
 from .fields import FIELDS_PROCESSORS
@@ -470,13 +470,13 @@ class Changes:
             name = model_opts['verbose_name']
         else:
             template = model_opts['verbose_name_template']
-            name = ugettext(template.format(model=model))
+            name = gettext(template.format(model=model))
 
         if model_opts['verbose_name_plural']:
             name_plural = model_opts['verbose_name_plural']
         else:
             template = model_opts['verbose_name_plural_template']
-            name_plural = ugettext(template.format(model=model))
+            name_plural = gettext(template.format(model=model))
 
         meta_fields['verbose_name'] = name
         meta_fields['verbose_name_plural'] = name_plural
