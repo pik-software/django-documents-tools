@@ -58,5 +58,6 @@ def process_migrate(
             _process_operation(apps, migration.app_label, operation)
 
 
-change_applied = Signal(  # noqa: pylint=invalid-name
-    providing_args=['documented_instance', 'change', 'updated_fields'])
+# providing_args=['documented_instance', 'change', 'updated_fields']
+change_applied = Signal()  # noqa: pylint=invalid-name
+
