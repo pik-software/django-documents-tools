@@ -69,12 +69,15 @@ def get_change_viewset(documented_viewset):
         model._documented_model_field, # noqa: protected-access
         *documented_viewset.select_related_fields)
 
+    documented_mixins = getattr(
+        documented_viewset, 'documented_viewset_mixins', ())
+
     attrs = {'serializer_class': document_serializer,
              'filterset_class': document_filter,
              'select_related_fields': select_related_fields,
              '__doc__': base_change_viewset.__doc__}
     name = f'{model._meta.object_name}ViewSet'  # noqa: protected-access
-    return type(name, (base_change_viewset,), attrs)
+    return type(name, (base_change_viewset, *documented_mixins), attrs)
 
 
 def get_snapshot_viewset(change_viewset, documented_viewset):
@@ -99,8 +102,11 @@ def get_snapshot_viewset(change_viewset, documented_viewset):
              'select_related_fields': change_viewset.select_related_fields,
              '__doc__': base_snapshot_viewset.__doc__}
 
+    documented_mixins = getattr(
+        documented_viewset, 'documented_viewset_mixins', ())
+
     name = f'{snapshot_model._meta.object_name}ViewSet'  # noqa: protected-access
-    return type(name, (base_snapshot_viewset, ), attrs)
+    return type(name, (base_snapshot_viewset, *documented_mixins), attrs)
 
 
 def get_change_attachment_viewset(change_viewset):
