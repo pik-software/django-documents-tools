@@ -8,9 +8,10 @@ from .serializers import (
     get_change_serializer_class, get_snapshot_serializer,
     get_change_attachment_serializer)
 from ..settings import tools_settings
+from ..hooks import FixDocumentFieldsCamelcaseMixin
 
 
-class BaseDocumentedViewSet(ModelViewSet):
+class BaseDocumentedViewSet(ModelViewSet, FixDocumentFieldsCamelcaseMixin):
     allow_history = False
 
     lookup_field = 'uid'
