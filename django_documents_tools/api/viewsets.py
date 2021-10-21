@@ -1,5 +1,10 @@
+import re
+from collections import OrderedDict
+
 from rest_framework.viewsets import ModelViewSet
 from django.utils.module_loading import import_string
+from djangorestframework_camel_case.util import camelize_re
+from djangorestframework_camel_case.util import underscore_to_camel
 
 from django_documents_tools.utils import check_subclass
 from .filters import (
@@ -8,7 +13,44 @@ from .serializers import (
     get_change_serializer_class, get_snapshot_serializer,
     get_change_attachment_serializer)
 from ..settings import tools_settings
-from ..hooks import FixDocumentFieldsCamelcaseMixin
+
+
+class FixDocumentFieldsCamelcaseMixin:
+    DOCUMENT_FIELD = 'document_fields'
+
+    @staticmethod
+    def _camelize(data):
+        if isinstance(data, str):
+            data = re.sub(camelize_re, underscore_to_camel, data)
+        return data
+
+    def camelization_hook(self, data):
+        """
+        >>> d = FixDocumentFieldsCamelcaseMixin()
+
+        >>> d.camelization_hook( \
+            data={'document_fields':['abc_xyz', 'qwe_rty']})
+        OrderedDict([('document_fields', ['abcXyz', 'qweRty'])])
+
+        >>> d.camelization_hook( \
+            data={'document_fields':['abc_xyz'], 'f': ['asd_zxc']})
+        OrderedDict([('document_fields', ['abcXyz']), ('f', ['asd_zxc'])])
+        """
+
+        if isinstance(data, dict):
+            new_dict = OrderedDict()
+            for key, value in data.items():
+                new_key = key
+                new_value = self.camelization_hook(value)
+                if key == self.DOCUMENT_FIELD and isinstance(value, list):
+                    new_value = [self._camelize(elem) for elem in value]
+                new_dict[new_key] = new_value
+            return new_dict
+
+        if isinstance(data, list):
+            new_list = [self.camelization_hook(elem) for elem in data]
+            return new_list
+        return data
 
 
 class BaseDocumentedViewSet(ModelViewSet, FixDocumentFieldsCamelcaseMixin):
@@ -70,15 +112,12 @@ def get_change_viewset(documented_viewset):
         model._documented_model_field, # noqa: protected-access
         *documented_viewset.select_related_fields)
 
-    documented_mixins = getattr(
-        documented_viewset, 'documented_viewset_mixins', ())
-
     attrs = {'serializer_class': document_serializer,
              'filterset_class': document_filter,
              'select_related_fields': select_related_fields,
              '__doc__': base_change_viewset.__doc__}
     name = f'{model._meta.object_name}ViewSet'  # noqa: protected-access
-    return type(name, (base_change_viewset, *documented_mixins), attrs)
+    return type(name, (base_change_viewset, ), attrs)
 
 
 def get_snapshot_viewset(change_viewset, documented_viewset):
@@ -103,11 +142,8 @@ def get_snapshot_viewset(change_viewset, documented_viewset):
              'select_related_fields': change_viewset.select_related_fields,
              '__doc__': base_snapshot_viewset.__doc__}
 
-    documented_mixins = getattr(
-        documented_viewset, 'documented_viewset_mixins', ())
-
     name = f'{snapshot_model._meta.object_name}ViewSet'  # noqa: protected-access
-    return type(name, (base_snapshot_viewset, *documented_mixins), attrs)
+    return type(name, (base_snapshot_viewset, ), attrs)
 
 
 def get_change_attachment_viewset(change_viewset):
