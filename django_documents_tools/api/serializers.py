@@ -87,7 +87,8 @@ class CamelizeHookMixIn:
         return data
 
 
-class BaseChangeSerializer(UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
+class BaseChangeSerializer(
+        UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
     document_link = serializers.URLField(default='', allow_blank=True)
 
     def validate(self, attrs):
@@ -104,32 +105,37 @@ class BaseChangeSerializer(UnderscorizeHookMixIn, CamelizeHookMixIn, serializers
             'document_is_draft', 'document_fields', 'attachment', 'snapshot')
 
 
-class BaseSnapshotSerializer(UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
+class BaseSnapshotSerializer(
+        UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (
             *STANDARD_READONLY_FIELDS, 'document_fields', 'history_date')
 
 
-class BaseDocumentedModelLinkSerializer(UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
+class BaseDocumentedModelLinkSerializer(
+        UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (*STANDARD_READONLY_FIELDS, )
 
 
-class BaseChangeAttachmentLinkSerializer(UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
+class BaseChangeAttachmentLinkSerializer(
+        UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (*STANDARD_READONLY_FIELDS, )
 
 
-class BaseSnapshotLinkSerializer(UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
+class BaseSnapshotLinkSerializer(
+        UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (*STANDARD_READONLY_FIELDS, )
 
 
-class BaseChangeAttachmentSerializer(UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
+class BaseChangeAttachmentSerializer(
+        UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (*STANDARD_READONLY_FIELDS, 'file')
