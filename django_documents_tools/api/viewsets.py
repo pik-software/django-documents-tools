@@ -3,8 +3,8 @@ from collections import OrderedDict
 
 from rest_framework.viewsets import ModelViewSet
 from django.utils.module_loading import import_string
-from djangorestframework_camel_case.util import camelize_re
-from djangorestframework_camel_case.util import underscore_to_camel
+from djangorestframework_camel_case.util import (
+    camelize_re, underscore_to_camel)
 
 from django_documents_tools.utils import check_subclass
 from .filters import (

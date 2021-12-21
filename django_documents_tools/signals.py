@@ -50,7 +50,8 @@ def _process_operation(fake_apps, app, operation):
 @receiver(post_migrate)
 def process_migrate(
         apps: Union[StateApps, Tuple]=(), # noqa: redefined-outer-name
-        plan: Union[List[Tuple[migrations.Migration, bool]], Tuple] = (), **kwargs):
+        plan: Union[List[Tuple[migrations.Migration, bool]], Tuple] = (),
+        **kwargs):
     for migration, is_reverse in plan:
         if is_reverse:
             continue
@@ -60,4 +61,3 @@ def process_migrate(
 
 # providing_args=['documented_instance', 'change', 'updated_fields']
 change_applied = Signal()  # noqa: pylint=invalid-name
-

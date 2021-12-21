@@ -1,6 +1,10 @@
+import re
+from collections import OrderedDict
 from rest_framework import serializers
 from django.db import models
 from django.utils.module_loading import import_string
+from djangorestframework_camel_case.util import (
+    camelize_re, underscore_to_camel, camel_to_underscore)
 
 from django_documents_tools.utils import (
     check_subclass, validate_change_attrs, LimitedChoicesValidator)
@@ -11,7 +15,80 @@ NON_REQUIRED_KWARGS = {'required': False, 'allow_null': True}
 STANDARD_READONLY_FIELDS = ('guid', 'type', 'version', 'created', 'updated', )
 
 
-class BaseChangeSerializer(serializers.ModelSerializer):
+class UnderscorizeHookMixIn:
+    @staticmethod
+    def _underscorize(data):
+        if isinstance(data, str):
+            data = camel_to_underscore(data)
+        return data
+
+    def underscorize_hook(self, data):
+        """
+        >>> d = UnderscorizeHookMixIn()
+
+        >>> d.underscorize_hook( \
+            data={'documentFields':['abcXyz', 'qweRty']})
+        OrderedDict([('documentFields', ['abc_xyz', 'qwe_rty'])])
+
+        >>> d.underscorize_hook( \
+            data={'documentFields':['abcXyz'], 'f': ['asdZxc']})
+        OrderedDict([('documentFields', ['abc_xyz']), ('f', ['asdZxc'])])
+        """
+
+        if isinstance(data, dict):
+            new_dict = OrderedDict()
+            for key, value in data.items():
+                new_key = key
+                new_value = self.underscorize_hook(value)
+                if key == 'documentFields' and isinstance(value, list):
+                    new_value = [self._underscorize(elem) for elem in value]
+                new_dict[new_key] = new_value
+            return new_dict
+
+        if isinstance(data, list):
+            new_list = [self.underscorize_hook(elem) for elem in data]
+            return new_list
+        return data
+
+
+class CamelizeHookMixIn:
+    @staticmethod
+    def _camelize(data):
+        if isinstance(data, str):
+            data = re.sub(camelize_re, underscore_to_camel, data)
+        return data
+
+    def camelization_hook(self, data):
+        """
+        >>> d = CamelizeHookMixIn()
+
+        >>> d.camelization_hook( \
+            data={'document_fields':['abc_xyz', 'qwe_rty']})
+        OrderedDict([('document_fields', ['abcXyz', 'qweRty'])])
+
+        >>> d.camelization_hook( \
+            data={'document_fields':['abc_xyz'], 'f': ['asd_zxc']})
+        OrderedDict([('document_fields', ['abcXyz']), ('f', ['asd_zxc'])])
+        """
+
+        if isinstance(data, dict):
+            new_dict = OrderedDict()
+            for key, value in data.items():
+                new_key = key
+                new_value = self.camelization_hook(value)
+                if key == 'document_fields' and isinstance(value, list):
+                    new_value = [self._camelize(elem) for elem in value]
+                new_dict[new_key] = new_value
+            return new_dict
+
+        if isinstance(data, list):
+            new_list = [self.camelization_hook(elem) for elem in data]
+            return new_list
+        return data
+
+
+class BaseChangeSerializer(
+        UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
     document_link = serializers.URLField(default='', allow_blank=True)
 
     def validate(self, attrs):
@@ -28,32 +105,37 @@ class BaseChangeSerializer(serializers.ModelSerializer):
             'document_is_draft', 'document_fields', 'attachment', 'snapshot')
 
 
-class BaseSnapshotSerializer(serializers.ModelSerializer):
+class BaseSnapshotSerializer(
+        UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (
             *STANDARD_READONLY_FIELDS, 'document_fields', 'history_date')
 
 
-class BaseDocumentedModelLinkSerializer(serializers.ModelSerializer):
+class BaseDocumentedModelLinkSerializer(
+        UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (*STANDARD_READONLY_FIELDS, )
 
 
-class BaseChangeAttachmentLinkSerializer(serializers.ModelSerializer):
+class BaseChangeAttachmentLinkSerializer(
+        UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (*STANDARD_READONLY_FIELDS, )
 
 
-class BaseSnapshotLinkSerializer(serializers.ModelSerializer):
+class BaseSnapshotLinkSerializer(
+        UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (*STANDARD_READONLY_FIELDS, )
 
 
-class BaseChangeAttachmentSerializer(serializers.ModelSerializer):
+class BaseChangeAttachmentSerializer(
+        UnderscorizeHookMixIn, CamelizeHookMixIn, serializers.ModelSerializer):
     class Meta:
         model = None
         fields = (*STANDARD_READONLY_FIELDS, 'file')
