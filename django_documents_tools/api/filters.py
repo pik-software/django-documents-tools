@@ -138,7 +138,7 @@ def get_change_filter(model, orig_viewset):
     documented_model = orig_viewset.serializer_class.Meta.model
     documented_field = model._documented_model_field  # noqa: protected-access
     documented_filter = RelatedFilter(
-        getattr(orig_viewset, 'filterset_class', orig_viewset.filter_class),
+        getattr(orig_viewset, 'filterset_class', orig_viewset.filterset_class),
         queryset=documented_model.objects.all())
     meta = type('Meta', (BaseChangeFilter.Meta,), {'model': model})
     pk_field_name = model._meta.pk.name  # noqa: protected-access

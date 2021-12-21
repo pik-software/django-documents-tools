@@ -97,7 +97,7 @@ def get_change_serializer_class(model, serializer_class, allowed_fields=None):  
     allowed_fields = allowed_fields or model._all_documented_fields # noqa: protected-access
     for name in allowed_fields:  # noqa: protected-access
         # NullBoolean already accepts `null` and fails on `required` arg
-        if isinstance(opts.get_field(name), models.NullBooleanField):
+        if isinstance(opts.get_field(name), models.BooleanField):
             continue
 
         field = serializer_class._declared_fields.get(name)  # noqa: protected-access
