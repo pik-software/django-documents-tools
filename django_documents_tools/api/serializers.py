@@ -13,6 +13,7 @@ from ..settings import tools_settings
 
 NON_REQUIRED_KWARGS = {'required': False, 'allow_null': True}
 STANDARD_READONLY_FIELDS = ('guid', 'type', 'version', 'created', 'updated', )
+DOCUMENT_FIELDS = ['document_fields', 'documentFields', ]
 
 
 class UnderscorizeHookMixIn:
@@ -27,12 +28,20 @@ class UnderscorizeHookMixIn:
         >>> d = UnderscorizeHookMixIn()
 
         >>> d.underscorize_hook( \
-            data={'documentFields':['abcXyz', 'qweRty']})
+            data={'documentFields': ['abcXyz', 'qweRty']})
         OrderedDict([('documentFields', ['abc_xyz', 'qwe_rty'])])
 
         >>> d.underscorize_hook( \
-            data={'documentFields':['abcXyz'], 'f': ['asdZxc']})
+            data={'documentFields': ['abcXyz'], 'f': ['asdZxc']})
         OrderedDict([('documentFields', ['abc_xyz']), ('f', ['asdZxc'])])
+
+        >>> d.underscorize_hook( \
+            data={'document_fields': ['abcXyz', 'qweRty']})
+        OrderedDict([('document_fields', ['abc_xyz', 'qwe_rty'])])
+
+        >>> d.underscorize_hook( \
+            data={'document_fields': ['abcXyz'], 'f': ['asdZxc']})
+        OrderedDict([('document_fields', ['abc_xyz']), ('f', ['asdZxc'])])
         """
 
         if isinstance(data, dict):
@@ -40,7 +49,7 @@ class UnderscorizeHookMixIn:
             for key, value in data.items():
                 new_key = key
                 new_value = self.underscorize_hook(value)
-                if key == 'documentFields' and isinstance(value, list):
+                if key in DOCUMENT_FIELDS and isinstance(value, list):
                     new_value = [self._underscorize(elem) for elem in value]
                 new_dict[new_key] = new_value
             return new_dict
@@ -63,12 +72,20 @@ class CamelizeHookMixIn:
         >>> d = CamelizeHookMixIn()
 
         >>> d.camelization_hook( \
-            data={'document_fields':['abc_xyz', 'qwe_rty']})
+            data={'document_fields': ['abc_xyz', 'qwe_rty']})
         OrderedDict([('document_fields', ['abcXyz', 'qweRty'])])
 
         >>> d.camelization_hook( \
             data={'document_fields':['abc_xyz'], 'f': ['asd_zxc']})
         OrderedDict([('document_fields', ['abcXyz']), ('f', ['asd_zxc'])])
+
+        >>> d.camelization_hook( \
+            data={'document_fields': ['abc_xyz', 'qwe_rty']})
+        OrderedDict([('documentFields', ['abcXyz', 'qweRty'])])
+
+        >>> d.camelization_hook( \
+            data={'document_fields':['abc_xyz'], 'f': ['asd_zxc']})
+        OrderedDict([('documentFields', ['abcXyz']), ('f', ['asd_zxc'])])
         """
 
         if isinstance(data, dict):
@@ -76,7 +93,7 @@ class CamelizeHookMixIn:
             for key, value in data.items():
                 new_key = key
                 new_value = self.camelization_hook(value)
-                if key == 'document_fields' and isinstance(value, list):
+                if key in DOCUMENT_FIELDS and isinstance(value, list):
                     new_value = [self._camelize(elem) for elem in value]
                 new_dict[new_key] = new_value
             return new_dict
