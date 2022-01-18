@@ -13,7 +13,6 @@ from ..settings import tools_settings
 
 NON_REQUIRED_KWARGS = {'required': False, 'allow_null': True}
 STANDARD_READONLY_FIELDS = ('guid', 'type', 'version', 'created', 'updated', )
-DOCUMENT_FIELDS = ['document_fields', 'documentFields', ]
 
 
 class UnderscorizeHookMixIn:
@@ -49,7 +48,7 @@ class UnderscorizeHookMixIn:
             for key, value in data.items():
                 new_key = key
                 new_value = self.underscorize_hook(value)
-                if key in DOCUMENT_FIELDS and isinstance(value, list):
+                if key == 'document_fields' and isinstance(value, list):
                     new_value = [self._underscorize(elem) for elem in value]
                 new_dict[new_key] = new_value
             return new_dict
@@ -93,7 +92,7 @@ class CamelizeHookMixIn:
             for key, value in data.items():
                 new_key = key
                 new_value = self.camelization_hook(value)
-                if key in DOCUMENT_FIELDS and isinstance(value, list):
+                if key == 'document_fields' and isinstance(value, list):
                     new_value = [self._camelize(elem) for elem in value]
                 new_dict[new_key] = new_value
             return new_dict
