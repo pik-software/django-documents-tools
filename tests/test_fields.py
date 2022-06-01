@@ -1,12 +1,12 @@
 from unittest.mock import Mock
 
-from django.db.models import BooleanField, NullBooleanField, AutoField
+from django.db.models import BooleanField, AutoField
 from django_documents_tools import fields
 
 
 def test_boolean():
     field = fields.copy_boolean(BooleanField())
-    assert field.__class__ == NullBooleanField
+    assert field.__class__ == BooleanField
 
 
 def test_primary():

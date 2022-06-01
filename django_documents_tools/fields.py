@@ -83,7 +83,7 @@ def copy_other(field):
 
 
 def copy_boolean(field):
-    field.__class__ = models.NullBooleanField
+    field.__class__ = models.BooleanField
     return field
 
 
