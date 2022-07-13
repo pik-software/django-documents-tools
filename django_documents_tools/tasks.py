@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Iterable
 
 from celery import app, Task
@@ -15,11 +15,14 @@ class StartTimeTask(Task):  # noqa: abstract-method
 def apply_postponed_documents(
         model_names: Iterable[str], start_time: str):
     today = datetime.fromisoformat(start_time).date()
+    start_today = datetime.combine(today, datetime.min.time())
+    end_today = datetime.combine(today, datetime.max.time())
     for model_str in model_names:
         app_label, model_name = model_str.split('.')
         model = apps.get_model(app_label=app_label, model_name=model_name)
         documents_qs = model.changes.filter(
-            document_date__date=today, document_is_draft=False)
+            document_date__range=[start_today, end_today],
+            document_is_draft=False)
         for document in documents_qs:
             if document.building.changes.apply_to_object():
                 document.building.save()
