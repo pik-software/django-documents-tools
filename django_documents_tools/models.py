@@ -31,7 +31,7 @@ class Dated(models.Model):
         editable=False, auto_now=True, db_index=True,
         verbose_name=_('updated'))
     deleted = models.DateTimeField(
-        editable=False, null=True, blank=True, db_index=True,
+        editable=True, null=True, blank=True, db_index=True,
         verbose_name=_('deleted'))
 
     class Meta:
@@ -347,11 +347,11 @@ class Changes:
             '{app_label}.change_{model_name}': (
                 'document_name', 'document_date', 'document_link',
                 'document_is_draft', 'document_fields', 'attachment',
-                primary_field_name, *documented_fields),
+                'deleted', primary_field_name, *documented_fields),
             '{app_label}.add_{model_name}': (
                 'document_name', 'document_date', 'document_link',
                 'document_is_draft', 'document_fields', 'attachment',
-                primary_field_name, *documented_fields)}
+                'deleted', primary_field_name, *documented_fields)}
         attachment_title = (
             self.change_attachment_model._meta.verbose_name.title())  # noqa: protected-access
         attrs['snapshot'] = models.ForeignKey(
