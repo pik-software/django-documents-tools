@@ -31,7 +31,7 @@ class Dated(models.Model):
         editable=False, auto_now=True, db_index=True,
         verbose_name=_('updated'))
     deleted = models.DateTimeField(
-        editable=False, null=True, blank=True, db_index=True,
+        editable=True, null=True, blank=True, db_index=True,
         verbose_name=_('deleted'))
 
     class Meta:
